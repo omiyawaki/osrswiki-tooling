@@ -100,3 +100,7 @@ workflow_test_*.png
 # Temporary emulator files
 emulator.err
 emulator.outapp/
+
+# Google Drive temporary directories
+.tmp.drivedownload/
+.tmp.driveupload/
