@@ -40,6 +40,35 @@ The iOS Xcode project should include a build phase that:
 3. Copies assets from `../../shared/assets/` to the app bundle
 4. Copies data files from `../../shared/data/` to the app bundle
 
+### Adding Build Phase to Xcode
+
+1. Open `OSRS Wiki.xcodeproj` in Xcode
+2. Select the target "OSRS Wiki"
+3. Go to "Build Phases" tab
+4. Add a new "Run Script" phase with:
+
+```bash
+# Copy shared assets to app bundle
+echo "Copying shared assets..."
+
+# Create directories in app bundle
+mkdir -p "${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.app/shared"
+
+# Copy CSS files
+cp -r "${SRCROOT}/../../shared/css" "${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.app/shared/"
+
+# Copy JavaScript files  
+cp -r "${SRCROOT}/../../shared/js" "${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.app/shared/"
+
+# Copy assets
+cp -r "${SRCROOT}/../../shared/assets" "${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.app/shared/"
+
+# Copy data files
+cp -r "${SRCROOT}/../../shared/data" "${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.app/shared/"
+
+echo "Shared assets copied successfully"
+```
+
 ## Swift Code Integration
 
 iOS Swift code should reference these bundled assets:
