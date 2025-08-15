@@ -53,6 +53,14 @@ git worktree add "$WORKTREE_DIR" -b "$BRANCH_NAME"
 # Set up shared scripts in worktree
 cd "$WORKTREE_DIR"
 
+# Verify platforms directory is present (should be included since it's tracked in git)
+if [[ ! -d "platforms/android" || ! -d "platforms/ios" ]]; then
+    echo -e "${RED}⚠️  Warning: platforms/ directory missing from worktree${NC}"
+    echo "This may indicate an issue with git tracking. Platforms should be available for development."
+else
+    echo -e "${GREEN}✅ Platforms directory verified in worktree${NC}"
+fi
+
 # Create symlink to shared scripts directory 
 # NOTE: Worktree is now in ~/Develop/osrswiki-sessions/, main repo is in ~/Develop/osrswiki/
 MAIN_REPO_PATH="/Users/miyawaki/Develop/osrswiki"
