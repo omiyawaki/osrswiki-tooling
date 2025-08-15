@@ -60,28 +60,19 @@ Claude handles session setup directly with intelligent platform detection and en
    - **Environment Setup**: Configure platform-specific devices/simulators
    - **Development Readiness**: Prepare workspace for immediate development
 
-### Worker Spawning Examples
+### Development Workflow
 
-**Simple Task**: "Fix search button styling"
-```
-Orchestrator → Spawns 1 Worker → plan→implement→scaffold→test
-```
+After session setup, you can work on your task using the standard development workflow:
 
-**Complex Task**: "Add complete user authentication system"
+**Development Process**: 
 ```
-Orchestrator → Spawns 3 Workers:
-- Worker 1: Authentication UI (plan→implement→scaffold→test)
-- Worker 2: Authentication API (plan→implement→scaffold→test)  
-- Worker 3: User data management (plan→implement→scaffold→test)
-All workers run in parallel!
+plan → implement → scaffold → test
 ```
 
-**Recursive Task**: "Build e-commerce platform"
-```
-Orchestrator → Spawns 3 Workers (Search, Cart, Checkout)
-Each Worker → Analyzes its task → May spawn sub-workers if still complex
-Results in tree of workers all progressing in parallel
-```
+**Task Examples**:
+- **Simple Task**: "Fix search button styling" → Direct implementation
+- **Complex Task**: "Add user authentication" → Break down and implement incrementally  
+- **Feature Development**: "Build search functionality" → Plan, implement, test systematically
 
 ## Session Complete - Development Ready!
 
