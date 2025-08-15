@@ -33,20 +33,15 @@ When you describe your task, Claude automatically detects the target platform:
 
 If unclear from your description, Claude will ask: "Will you be working on Android, iOS, or both platforms?"
 
-## Agent Integration
+## Session Setup Process
 
-This command uses the **orchestrator** agent for intelligent session setup and task analysis:
+Claude handles session setup directly with intelligent platform detection and environment configuration:
 
-**Agent**: `orchestrator`  
-**Purpose**: Analyzes task complexity and spawns appropriate workers for recursive development  
-**Spawning**: Claude automatically uses the Task tool with `subagent_type="orchestrator"`
-
-The orchestrator handles:
-- Task description analysis and complexity assessment
-- Platform detection (Android, iOS, or cross-platform)
-- Session setup and environment configuration
-- Worker spawning strategy (single worker vs. multiple parallel workers)
-- Coordination of recursive development workflows
+- **Task analysis**: Understand scope and complexity from your description
+- **Platform detection**: Automatically detect Android, iOS, or cross-platform based on keywords
+- **Session infrastructure**: Create worktree, branch, and environment setup
+- **Device/simulator setup**: Configure platform-specific development environment
+- **Development readiness**: Prepare session for immediate development work
 
 ## Required Actions
 
