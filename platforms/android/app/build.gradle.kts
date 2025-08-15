@@ -55,6 +55,12 @@ android {
     lint {
         abortOnError = false
     }
+
+    sourceSets {
+        getByName("main") {
+            assets.srcDirs("../../../shared/css", "../../../shared/js", "../../../shared/assets")
+        }
+    }
 }
 
 dependencies {
