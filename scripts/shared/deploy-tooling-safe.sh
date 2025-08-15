@@ -169,7 +169,7 @@ Deployment info:
 - Source: $MONOREPO_ROOT
 - Target: $DEPLOY_TOOLING  
 - Branch: $DEPLOY_BRANCH
-- Date: $(date --iso-8601=seconds)
+- Date: $(date '+%Y-%m-%dT%H:%M:%S%z')
 - Platforms excluded: android, ios (deployed to separate repositories)"
 
     git commit -m "$DEPLOY_COMMIT_MSG"
