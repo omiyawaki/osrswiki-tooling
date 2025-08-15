@@ -59,8 +59,11 @@ Working Directory Clean: $(git diff --quiet && git diff --cached --quiet && echo
 EOF
             
         else
-            echo -e "${RED}❌ Failed to backup $repo_name${NC}"
-            return 1
+            echo -e "${YELLOW}⚠️  Git bundle failed for $repo_name, trying alternative backup...${NC}"
+            # Fallback: create tar archive of the repository
+            tar -czf "$BACKUP_DIR/${bundle_name}.tar.gz" -C "$(dirname "$repo_path")" "$(basename "$repo_path")" 2>/dev/null && \
+                echo -e "${GREEN}✅ $repo_name backup created (tar archive)${NC}" || \
+                echo -e "${RED}❌ Failed to backup $repo_name${NC}"
         fi
         
         cd - >/dev/null
