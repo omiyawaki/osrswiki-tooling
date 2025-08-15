@@ -19,20 +19,15 @@ Claude will:
 6. **Delete feature branch** (local and remote) - it's no longer needed!
 7. **Clean up session** (devices, simulators, worktree)
 
-## Agent Integration
+## Merge Process
 
-This command uses the **merger** agent for intelligent merge operations and conflict resolution:
+Claude handles merge operations directly with intelligent conflict resolution and validation:
 
-**Agent**: `merger`  
-**Purpose**: Handles complex merge operations, conflict resolution, and integration validation  
-**Spawning**: Claude automatically uses the Task tool with `subagent_type="merger"`
-
-The merger handles:
-- Complex merge operations with conflict detection
-- Intelligent conflict resolution assistance
-- Integration validation after merge
-- PR creation workflow (if requested)
-- Feature branch cleanup automation
+- **Merge strategy selection**: Choose optimal approach (fast-forward, merge commit)
+- **Conflict detection**: Identify and guide through merge conflicts
+- **Quality validation**: Run tests and lint checks on merged code
+- **Integration verification**: Ensure changes work correctly in main
+- **Automatic cleanup**: Remove feature branch and session resources
 
 ## Required Actions
 
