@@ -31,28 +31,19 @@ Claude handles merge operations directly with intelligent conflict resolution an
 
 ## Required Actions
 
-**IMPORTANT: Claude will delegate merge operations to the merger agent, which will handle all complexity automatically.**
+**Claude will handle merge operations directly, guiding you through each step.**
 
-### Automatic Agent Workflow
+### Merge Workflow
 
-1. **Spawn Merger Agent**:
-   Claude automatically spawns the merger agent to handle the complete merge and cleanup process:
-   ```bash
-   Task tool with:
-   - description: "Merge feature branch to main and clean up session"
-   - prompt: "Merge the current feature branch to main, validate the integration, and completely clean up the session. Handle conflicts if they arise and delete the feature branch after successful merge."
-   - subagent_type: "merger"
-   ```
+Claude will perform the complete merge and cleanup process:
 
-### What the Merger Does
-
-The merger agent will automatically handle:
-- **Session Analysis**: Detect current feature branch and session state
-- **Merge Strategy**: Choose appropriate merge approach (fast-forward, merge commit, or squash)
-- **Conflict Resolution**: Handle merge conflicts with user assistance if needed
-- **Quality Validation**: Run tests and lint checks on merged code
-- **Branch Cleanup**: Delete feature branch after successful merge
-- **Session Cleanup**: Remove worktree and session resources
+1. **Session Analysis**: Detect current feature branch and session state
+2. **Final Commit**: Commit any remaining work and push feature branch
+3. **Merge Strategy**: Choose appropriate merge approach (fast-forward, merge commit)
+4. **Conflict Resolution**: Guide you through any merge conflicts
+5. **Quality Validation**: Run tests and lint checks on merged code
+6. **Branch Cleanup**: Delete feature branch after successful merge
+7. **Session Cleanup**: Remove worktree and session resources
 
 ## Merge Strategies
 
