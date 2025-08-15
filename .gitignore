@@ -12,9 +12,8 @@
 !/*.md
 
 # Allow directories and their contents  
-# Note: platforms/ excluded for tooling deployment (deployed separately to platform-specific repos)
-# !/platforms/
-# !/platforms/**
+!/platforms/
+!/platforms/**
 !/shared/
 !/shared/**
 !/tools/
