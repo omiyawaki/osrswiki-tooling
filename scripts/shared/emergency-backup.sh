@@ -253,14 +253,15 @@ echo -e "${GREEN}✅ Emergency backup completed successfully${NC}"
 echo -e "${YELLOW}💾 Backup stored at: $BACKUP_DIR${NC}"
 echo -e "${YELLOW}📖 Restore instructions: $RESTORE_SCRIPT${NC}"
 
-# Optional: compress the entire backup
-if command -v tar >/dev/null; then
+# Optional: compress the entire backup (only for large backups or on request)
+if [[ "${COMPRESS_BACKUP:-false}" == "true" ]] && command -v tar >/dev/null; then
     echo ""
     echo -e "${BLUE}🗜️  Creating compressed archive...${NC}"
     ARCHIVE_NAME="${BACKUP_DIR}.tar.gz"
     tar -czf "$ARCHIVE_NAME" -C "$(dirname "$BACKUP_DIR")" "$(basename "$BACKUP_DIR")"
     ARCHIVE_SIZE=$(du -sh "$ARCHIVE_NAME" | cut -f1)
     echo -e "${GREEN}✅ Compressed archive created: $ARCHIVE_NAME ($ARCHIVE_SIZE)${NC}"
+    echo -e "${YELLOW}💡 Set COMPRESS_BACKUP=true to enable automatic compression${NC}"
 fi
 
 echo ""
