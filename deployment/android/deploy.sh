@@ -245,8 +245,9 @@ else
                     # Remove all content except .git
                     find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
                     # Copy platforms/android content
-                    cp -r "$(pwd | sed 's|/Deploy/osrswiki-android||')/platforms/android"/* .
-                    cp "$(pwd | sed 's|/Deploy/osrswiki-android||')/platforms/android/.gitignore" . 2>/dev/null || true
+                    MONOREPO_ROOT="/Users/miyawaki/Develop/osrswiki"
+                    cp -r "$MONOREPO_ROOT/platforms/android"/* .
+                    cp "$MONOREPO_ROOT/platforms/android/.gitignore" . 2>/dev/null || true
                     # Commit and push
                     git add -A
                     git commit -m "deploy: manual sync due to git history issues
