@@ -305,33 +305,10 @@ log "====================================="
 # Step 1: Clean up empty or failed backups first
 cleanup_failed_backups
 
-# Step 2: Age-based cleanup (existing logic)
-log "Cleaning up old backups (older than $MAX_BACKUP_AGE_DAYS days)..."
-CLEANUP_COUNT=0
+# Step 2: Tiered retention policy cleanup (new)
+tiered_retention_cleanup
 
-if [[ -d "$BACKUP_BASE_DIR" ]]; then
-    while IFS= read -r -d '' backup_dir; do
-        log "Removing old backup: $(basename "$backup_dir")"
-        rm -rf "$backup_dir"
-        
-        # Also remove associated tar.gz file
-        local tar_file="${backup_dir}.tar.gz"
-        if [[ -f "$tar_file" ]]; then
-            rm -f "$tar_file"
-            log "Removed associated archive: $(basename "$tar_file")"
-        fi
-        
-        ((CLEANUP_COUNT++))
-    done < <(find "$BACKUP_BASE_DIR" -type d -name "*-auto-*" -mtime +$MAX_BACKUP_AGE_DAYS -print0 2>/dev/null)
-    
-    if [[ $CLEANUP_COUNT -gt 0 ]]; then
-        log_success "Cleaned up $CLEANUP_COUNT old backups"
-    else
-        log "No old backups to clean up"
-    fi
-fi
-
-# Step 3: Size-based cleanup (new)
+# Step 3: Size-based cleanup (fallback)
 enforce_size_limit
 
 # Cleanup log file if it gets too large
