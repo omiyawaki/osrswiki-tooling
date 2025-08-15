@@ -2,6 +2,12 @@ plugins {
     application
 }
 
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(24)) // Use Java 24 with latest Lombok
+    }
+}
+
 repositories {
     mavenCentral()
 }
@@ -19,8 +25,8 @@ dependencies {
     implementation("org.apache.commons:commons-compress:1.26.2") // For data decompression
 
     // Updated Lombok version for compatibility with newer JDKs
-    compileOnly("org.projectlombok:lombok:1.18.32")
-    annotationProcessor("org.projectlombok:lombok:1.18.32")
+    compileOnly("org.projectlombok:lombok:1.18.38")
+    annotationProcessor("org.projectlombok:lombok:1.18.38")
 }
 
 application {

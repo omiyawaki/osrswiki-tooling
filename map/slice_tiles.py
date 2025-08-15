@@ -5,8 +5,11 @@
 Generates one MBTiles file per map floor in parallel.
 This version dynamically calculates zoom levels and uses nearest-neighbor
 resampling to preserve a pixelated art style.
+
+Enhanced with selective floor processing capabilities.
 """
 
+import argparse
 import os
 import shutil
 import sqlite3
@@ -20,10 +23,19 @@ Image.MAX_IMAGE_PIXELS = None
 
 # --- Configuration ---
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-SOURCE_DIR = os.path.join(os.path.dirname(__file__), 'map-dumper', 'output')
+
+# Use centralized cache for binary assets
+import os
+HOME_DIR = os.path.expanduser('~')
+CACHE_BASE = os.path.join(HOME_DIR, 'Develop', 'osrswiki-cache')
+SOURCE_DIR = os.path.join(CACHE_BASE, 'binary-assets', 'map-images', 'output')
 SOURCE_IMAGES = [f'img-{i}.png' for i in range(4)]
 TEMP_OUTPUT_DIR = os.path.join(PROJECT_ROOT, 'tools', 'map_tiles_temp')
-ASSETS_DIR = os.path.join(PROJECT_ROOT, 'app', 'src', 'main', 'assets')
+ASSETS_DIR = os.path.join(CACHE_BASE, 'binary-assets', 'mbtiles')
+
+# Ensure cache directories exist
+os.makedirs(ASSETS_DIR, exist_ok=True)
+os.makedirs(SOURCE_DIR, exist_ok=True)
 
 # --- Tile Generation Settings ---
 # Set the desired tile size. 4096px provides excellent detail for high-res displays.
@@ -34,6 +46,70 @@ MIN_ZOOM = 0
 
 def log_time(message):
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [PID:{os.getpid()}] {message}")
+
+
+def get_available_floors():
+    """Get list of floors that have source images available."""
+    available_floors = []
+    for floor_num in range(4):  # Floors 0-3
+        source_image_path = os.path.join(SOURCE_DIR, f'img-{floor_num}.png')
+        if os.path.exists(source_image_path):
+            available_floors.append(floor_num)
+    return available_floors
+
+
+def get_missing_floors():
+    """Get list of floors that are missing mbtiles files."""
+    missing_floors = []
+    for floor_num in range(4):  # Floors 0-3
+        mbtiles_path = os.path.join(ASSETS_DIR, f'map_floor_{floor_num}.mbtiles')
+        if not os.path.exists(mbtiles_path):
+            missing_floors.append(floor_num)
+    return missing_floors
+
+
+def get_floors_to_process(floors_arg=None, force=False, skip_existing=True):
+    """
+    Determine which floors to process based on arguments and file states.
+    
+    Args:
+        floors_arg: Comma-separated string of floor numbers (e.g. "0,1,3") or None for auto-detect
+        force: If True, process floors even if output files exist
+        skip_existing: If True, skip floors that already have mbtiles files
+    
+    Returns:
+        List of floor numbers to process
+    """
+    available_floors = get_available_floors()
+    
+    if floors_arg:
+        # Parse specific floors from command line
+        requested_floors = [int(f.strip()) for f in floors_arg.split(',')]
+        # Validate that all requested floors have source images
+        invalid_floors = [f for f in requested_floors if f not in available_floors]
+        if invalid_floors:
+            log_time(f"ERROR: Requested floors {invalid_floors} don't have source images")
+            log_time(f"Available floors: {available_floors}")
+            return []
+        floors_to_process = requested_floors
+    else:
+        # Auto-detect: process all available floors
+        floors_to_process = available_floors
+    
+    # Filter out existing files if not forcing
+    if not force and skip_existing:
+        floors_with_existing_output = []
+        for floor in floors_to_process:
+            mbtiles_path = os.path.join(ASSETS_DIR, f'map_floor_{floor}.mbtiles')
+            if os.path.exists(mbtiles_path):
+                floors_with_existing_output.append(floor)
+        
+        if floors_with_existing_output:
+            log_time(f"Skipping floors with existing output: {floors_with_existing_output}")
+            log_time("Use --force to regenerate existing floors")
+            floors_to_process = [f for f in floors_to_process if f not in floors_with_existing_output]
+    
+    return sorted(floors_to_process)
 
 
 def make_background_transparent(img):
@@ -207,26 +283,112 @@ def process_floor(floor):
 
 
 def main():
-    log_time("Starting parallel map tile generation process.")
-
+    parser = argparse.ArgumentParser(
+        description="Generate MBTiles files for OSRS map floors",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  %(prog)s                     # Process all available floors (skip existing)
+  %(prog)s --floors 0,1,3      # Process only floors 0, 1, and 3
+  %(prog)s --missing-only      # Process only floors missing mbtiles files
+  %(prog)s --force             # Regenerate all floors (overwrite existing)
+  %(prog)s --floors 3 --force  # Force regenerate only floor 3
+  %(prog)s --list              # List available and missing floors, then exit
+        """
+    )
+    
+    parser.add_argument(
+        '--floors',
+        type=str,
+        help='Comma-separated list of floor numbers to process (0-3)'
+    )
+    parser.add_argument(
+        '--missing-only',
+        action='store_true',
+        help='Only process floors that are missing mbtiles files'
+    )
+    parser.add_argument(
+        '--force',
+        action='store_true',
+        help='Regenerate mbtiles even if they already exist'
+    )
+    parser.add_argument(
+        '--list',
+        action='store_true',
+        help='List available and missing floors, then exit'
+    )
+    
+    args = parser.parse_args()
+    
+    # Create assets directory if it doesn't exist
+    os.makedirs(ASSETS_DIR, exist_ok=True)
+    
+    # List mode: show status and exit
+    if args.list:
+        available_floors = get_available_floors()
+        missing_floors = get_missing_floors()
+        
+        log_time("=== Floor Status ===")
+        log_time(f"Available source images: {available_floors}")
+        log_time(f"Missing mbtiles files: {missing_floors}")
+        
+        for floor in range(4):
+            source_exists = os.path.exists(os.path.join(SOURCE_DIR, f'img-{floor}.png'))
+            mbtiles_exists = os.path.exists(os.path.join(ASSETS_DIR, f'map_floor_{floor}.mbtiles'))
+            status = "✅" if source_exists and mbtiles_exists else "❌" if not source_exists else "🔄"
+            log_time(f"  Floor {floor}: Source={source_exists}, MBTiles={mbtiles_exists} {status}")
+        return
+    
+    # Determine floors to process
+    floors_arg = None
+    if args.missing_only:
+        missing_floors = get_missing_floors()
+        if missing_floors:
+            floors_arg = ','.join(map(str, missing_floors))
+            log_time(f"Processing missing floors: {missing_floors}")
+        else:
+            log_time("No missing floors found. All mbtiles files exist.")
+            return
+    else:
+        floors_arg = args.floors
+    
+    floors_to_process = get_floors_to_process(
+        floors_arg=floors_arg,
+        force=args.force,
+        skip_existing=not args.force
+    )
+    
+    if not floors_to_process:
+        if args.floors:
+            log_time("No valid floors to process (check source images exist)")
+        else:
+            log_time("No floors need processing (all mbtiles exist, use --force to regenerate)")
+        return
+    
+    log_time(f"Starting selective map tile generation for floors: {floors_to_process}")
+    
     if os.path.exists(TEMP_OUTPUT_DIR):
         shutil.rmtree(TEMP_OUTPUT_DIR)
     os.makedirs(TEMP_OUTPUT_DIR)
-
-    # Clean up old mbtiles files before starting
-    for floor_num in range(len(SOURCE_IMAGES)):
-        mbtiles_filepath = os.path.join(ASSETS_DIR, f'map_floor_{floor_num}.mbtiles')
-        if os.path.exists(mbtiles_filepath):
-            os.remove(mbtiles_filepath)
-
+    
+    # Only remove mbtiles files for floors we're about to regenerate
+    if args.force:
+        for floor_num in floors_to_process:
+            mbtiles_filepath = os.path.join(ASSETS_DIR, f'map_floor_{floor_num}.mbtiles')
+            if os.path.exists(mbtiles_filepath):
+                log_time(f"Removing existing map_floor_{floor_num}.mbtiles")
+                os.remove(mbtiles_filepath)
+    
+    # Process floors in parallel
     with ProcessPoolExecutor() as executor:
-        results = executor.map(process_floor, range(len(SOURCE_IMAGES)))
+        results = executor.map(process_floor, floors_to_process)
         for result in results:
-            log_time(result)
-
+            if result:  # Only log non-None results
+                log_time(result)
+    
     log_time("Cleaning up temporary tile directory...")
     shutil.rmtree(TEMP_OUTPUT_DIR)
-    log_time("Process finished. All .mbtiles files have been created.")
+    log_time(f"Process finished. Processed floors: {floors_to_process}")
 
 
 if __name__ == "__main__":

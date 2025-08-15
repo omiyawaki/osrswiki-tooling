@@ -1,5 +1,7 @@
 #!/bin/bash
 # This script runs the MapImageDumper from within its project directory.
+# Usage: ./run_dumper.sh [floors]
+# floors: Optional comma-separated list of floor numbers to generate (e.g., "3" or "1,2,3")
 
 # Navigate to this script's directory to ensure relative paths work correctly.
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
@@ -28,9 +30,18 @@ if [ ! -f "xtea.json" ]; then
 fi
 
 # Execute the gradle wrapper, pointing to the new cache directory.
-echo "Running map dumper... Output will be in $DUMPER_DIR/output/"
+FLOORS_ARG=""
+if [ ! -z "$1" ]; then
+    FLOORS_ARG="--floors \"$1\""
+    echo "Running map dumper for floors: $1"
+else
+    echo "Running map dumper for all floors..."
+fi
+
+echo "Output will be in $DUMPER_DIR/output/"
+
 # Note the relative path to the cache from the dumper directory
-./gradlew run --args="--cachedir \"$CACHE_DIR\" --xteapath \"xtea.json\" --outputdir \"output\""
+./gradlew run --args="--cachedir \"$CACHE_DIR\" --xteapath \"xtea.json\" --outputdir \"output\" $FLOORS_ARG"
 
 if [ $? -eq 0 ]; then
     echo "Map dumper finished successfully."

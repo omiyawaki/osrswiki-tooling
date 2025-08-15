@@ -178,16 +178,16 @@ For JavaScript module discovery and tracking:
 
 ```bash
 # Run discovery scan on sample pages
-python3 js-discovery/update_discovery.py
+python3 js/update_discovery.py
 
 # View current implementation status
-python3 js-discovery/update_discovery.py --summary-only
+python3 js/update_discovery.py --summary-only
 
 # Generate comprehensive report
-python3 js-discovery/generate_report.py
+python3 js/generate_report.py
 
 # Initialize masterlists from existing data (first time only)
-python3 js-discovery/initialize_masterlists.py
+python3 js/initialize_masterlists.py
 ```
 
 The JS discovery system:

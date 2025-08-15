@@ -43,7 +43,7 @@ class MetaAssetUpdater:
         self.script_dir = Path(__file__).parent
         self.map_tool = self.script_dir / "map" / "map-asset-generator.py"
         self.css_tool = self.script_dir / "css" / "css-perfect-sync.py"
-        self.js_discovery_tool = self.script_dir / "js-discovery" / "update_discovery.py"
+        self.js_discovery_tool = self.script_dir / "js" / "update_discovery.py"
         
         # Track execution results
         self.results = {

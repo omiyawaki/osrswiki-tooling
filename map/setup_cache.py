@@ -43,10 +43,17 @@ def main():
     """
     Checks the local cache version against the latest from OpenRS2 and
     downloads the new cache if necessary.
+    Uses centralized cache location.
     """
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    cache_root_dir = os.path.join(script_dir, "openrs2_cache")
+    # Use centralized cache directory
+    import os
+    home_dir = os.path.expanduser('~')
+    cache_base = os.path.join(home_dir, 'Develop', 'osrswiki-cache')
+    cache_root_dir = os.path.join(cache_base, 'game-data', 'openrs2_cache')
     version_file = os.path.join(cache_root_dir, "cache.version")
+    
+    # Ensure cache directory exists
+    os.makedirs(cache_root_dir, exist_ok=True)
     
     try:
         print("Checking for latest cache version...")

@@ -733,7 +733,7 @@ def main():
         
         # Step 2: Analyze current coverage
         print("\n📊 Step 2: Analyzing Current Coverage")
-        local_css_path = "app/src/main/assets/styles/wiki-integration.css"
+        local_css_path = "shared/css/wiki-integration.css"
         coverage_analysis = coverage_analyzer.analyze_coverage(reference_profile, local_css_path)
         
         # Report current state
@@ -788,7 +788,7 @@ def main():
         
         # Step 8: Save results
         if validation['is_perfect']:
-            output_path = "app/src/main/assets/styles/wiki-integration-perfect.css"
+            output_path = "shared/css/wiki-integration-perfect.css"
             with open(output_path, 'w') as f:
                 f.write(perfect_css)
             print(f"\n💾 Perfect CSS saved to: {output_path}")

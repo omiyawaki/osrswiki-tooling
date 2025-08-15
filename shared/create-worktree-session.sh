@@ -61,108 +61,54 @@ else
     echo -e "${GREEN}✅ Platforms directory verified in worktree${NC}"
 fi
 
-# Create symlink to shared scripts directory 
-# NOTE: Worktree is now in ~/Develop/osrswiki-sessions/, main repo is in ~/Develop/osrswiki/
+# Copy essential untracked files from main repo
 MAIN_REPO_PATH="/Users/miyawaki/Develop/osrswiki"
-echo -e "${YELLOW}🔗 Creating symlink to main repository scripts...${NC}"
-ln -sf "$MAIN_REPO_PATH/scripts" scripts-shared
+CACHE_BASE="$HOME/Develop/osrswiki-cache"
+echo -e "${YELLOW}📁 Copying essential untracked files...${NC}"
 
-# Create simple wrapper scripts that call the originals with correct paths
-# This avoids copying and path modification complexity
+# Copy Android local.properties if it exists (contains SDK path)
+if [[ -f "$MAIN_REPO_PATH/platforms/android/local.properties" ]]; then
+    cp "$MAIN_REPO_PATH/platforms/android/local.properties" platforms/android/
+    echo -e "${GREEN}✅ Copied platforms/android/local.properties${NC}"
+else
+    echo -e "${YELLOW}⚠️  Warning: local.properties not found in main repo${NC}"
+fi
 
-# Android wrapper scripts
-echo -e "${YELLOW}📄 Creating wrapper scripts...${NC}"
-cat > setup-session-device.sh << 'EOF'
-#!/bin/bash
-exec ./scripts-shared/android/setup-session-device.sh "$@"
-EOF
+# Copy asset-mapping.json if it exists (for asset management)
+if [[ -f "$MAIN_REPO_PATH/shared/asset-mapping.json" ]]; then
+    cp "$MAIN_REPO_PATH/shared/asset-mapping.json" shared/
+    echo -e "${GREEN}✅ Copied shared/asset-mapping.json${NC}"
+else
+    echo -e "${YELLOW}⚠️  asset-mapping.json not found in main repo${NC}"
+fi
 
-cat > setup-container-device.sh << 'EOF'
-#!/bin/bash
-exec ./scripts-shared/android/setup-container-device.sh "$@"
-EOF
+# Check centralized cache availability
+echo -e "${YELLOW}📦 Checking centralized asset cache...${NC}"
+if [[ -d "$CACHE_BASE" ]]; then
+    # Count available cache assets
+    mbtiles_count=$(find "$CACHE_BASE/binary-assets/mbtiles" -name "*.mbtiles" 2>/dev/null | wc -l)
+    cache_size=$(du -sh "$CACHE_BASE" 2>/dev/null | cut -f1 || echo "unknown")
+    
+    echo -e "${GREEN}✅ Centralized cache found: $CACHE_BASE${NC}"
+    echo -e "${GREEN}   • Binary assets: $mbtiles_count .mbtiles files${NC}"
+    echo -e "${GREEN}   • Cache size: $cache_size${NC}"
+    echo -e "${GREEN}   • Build system will auto-discover cache assets${NC}"
+else
+    echo -e "${YELLOW}⚠️  Centralized cache not found at $CACHE_BASE${NC}"
+    echo -e "${YELLOW}   • Binary assets (.mbtiles) may be missing${NC}"
+    echo -e "${YELLOW}   • Run asset generator if map functionality needed${NC}"
+fi
 
-cat > get-app-id.sh << 'EOF'
-#!/bin/bash
-exec ./scripts-shared/android/get-app-id.sh "$@"
-EOF
-
-cat > quick-test.sh << 'EOF'
-#!/bin/bash
-exec ./scripts-shared/android/quick-test.sh "$@"
-EOF
-
-cat > start-session.sh << 'EOF'
-#!/bin/bash
-exec ./scripts-shared/android/start-session.sh "$@"
-EOF
-
-cat > test-workflow.sh << 'EOF'
-#!/bin/bash
-exec ./scripts-shared/android/test-workflow.sh "$@"
-EOF
-
-# Shared wrapper scripts
-cat > end-session.sh << 'EOF'
-#!/bin/bash
-exec ./scripts-shared/shared/end-session.sh "$@"
-EOF
-
-cat > run-with-env.sh << 'EOF'
-#!/bin/bash
-exec ./scripts-shared/shared/run-with-env.sh "$@"
-EOF
+# Create required empty directories that git doesn't track
+echo -e "${YELLOW}📁 Creating required empty directories...${NC}"
+mkdir -p platforms/android/app/src/main/assets
+echo -e "${GREEN}✅ Created platforms/android/app/src/main/assets${NC}"
 
 # Create screenshots directory for organized screenshot management
 mkdir -p screenshots
 echo "# Screenshot session metadata" > screenshots/.gitkeep
 echo "# Session: $SESSION_NAME" >> screenshots/.gitkeep
-echo "# Created: $(date --iso-8601=seconds)" >> screenshots/.gitkeep
-
-# Screenshot management wrapper scripts (Android)
-cat > take-screenshot.sh << 'EOF'
-#!/bin/bash
-exec ./scripts-shared/android/take-screenshot.sh "$@"
-EOF
-
-cat > clean-screenshots.sh << 'EOF'
-#!/bin/bash
-exec ./scripts-shared/android/clean-screenshots.sh "$@"
-EOF
-
-# iOS wrapper scripts
-cat > setup-session-simulator.sh << 'EOF'
-#!/bin/bash
-exec ./scripts-shared/ios/setup-session-simulator.sh "$@"
-EOF
-
-cat > get-bundle-id.sh << 'EOF'
-#!/bin/bash
-exec ./scripts-shared/ios/get-bundle-id.sh "$@"
-EOF
-
-cat > quick-test-ios.sh << 'EOF'
-#!/bin/bash
-exec ./scripts-shared/ios/quick-test.sh "$@"
-EOF
-
-cat > take-screenshot-ios.sh << 'EOF'
-#!/bin/bash
-exec ./scripts-shared/ios/take-screenshot.sh "$@"
-EOF
-
-cat > clean-screenshots-ios.sh << 'EOF'
-#!/bin/bash
-exec ./scripts-shared/ios/clean-screenshots.sh "$@"
-EOF
-
-cat > cleanup-session-simulator.sh << 'EOF'
-#!/bin/bash
-exec ./scripts-shared/ios/cleanup-session-simulator.sh "$@"
-EOF
-
-# Make wrapper scripts executable
-chmod +x *.sh
+echo "# Created: $(date '+%Y-%m-%dT%H:%M:%S%z')" >> screenshots/.gitkeep
 
 echo -e "${GREEN}✅ Worktree session ready!${NC}"
 echo ""
@@ -170,22 +116,22 @@ echo -e "${BLUE}💡 To use this session:${NC}"
 echo "   cd $WORKTREE_DIR"
 echo ""
 echo -e "${YELLOW}   # Android Development:${NC}"
-echo "   ./setup-session-device.sh     # Start Android emulator (15s)"
-echo "   ./setup-container-device.sh   # Container-optimized Android setup"
-echo "   source .claude-env             # Load Android environment variables"
-echo "   ./quick-test.sh               # Build and deploy Android app (5s each)"
-echo "   ./take-screenshot.sh          # Take Android screenshot"
+echo "   ./scripts/android/setup-session-device.sh     # Start Android emulator (15s)"
+echo "   ./scripts/android/setup-container-device.sh   # Container-optimized Android setup"
+echo "   source .claude-env                             # Load Android environment variables"
+echo "   ./scripts/android/quick-test.sh               # Build and deploy Android app (5s)"
+echo "   ./scripts/android/take-screenshot.sh          # Take Android screenshot"
 echo ""
 echo -e "${YELLOW}   # iOS Development (macOS only):${NC}"
-echo "   ./setup-session-simulator.sh  # Start iOS Simulator"
-echo "   source .claude-env             # Load iOS environment variables"
-echo "   ./quick-test-ios.sh           # Build and deploy iOS app"
-echo "   ./take-screenshot-ios.sh      # Take iOS screenshot"
-echo "   ./get-bundle-id.sh            # Get iOS bundle identifier"
+echo "   ./scripts/ios/setup-session-simulator.sh      # Start iOS Simulator"
+echo "   source .claude-env                             # Load iOS environment variables"
+echo "   ./scripts/ios/quick-test.sh                   # Build and deploy iOS app"
+echo "   ./scripts/ios/take-screenshot.sh              # Take iOS screenshot"
+echo "   ./scripts/ios/get-bundle-id.sh                # Get iOS bundle identifier"
 echo ""
 echo "   # ... develop ..."
-echo "   ./end-session.sh             # Clean up session"
+echo "   ./scripts/shared/end-session.sh               # Clean up session"
 echo ""
 echo -e "${BLUE}💡 To remove session from main repo:${NC}"
-echo "   cd /Users/miyawaki/Developer/osrswiki"
+echo "   cd /Users/miyawaki/Develop/osrswiki"
 echo "   git worktree remove $WORKTREE_DIR"

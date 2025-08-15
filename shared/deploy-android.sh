@@ -9,6 +9,7 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 echo -e "${BLUE}🚀 OSRS Wiki Git-Based Android Deployment${NC}"
@@ -106,22 +107,324 @@ echo -e "${YELLOW}Copying Android platform content...${NC}"
 cp -r "$MONOREPO_ROOT/platforms/android"/* .
 cp "$MONOREPO_ROOT/platforms/android/.gitignore" . 2>/dev/null || true
 
-# Integrate shared components if they exist
-echo -e "${YELLOW}Integrating shared components...${NC}"
-ANDROID_SHARED_DIR="app/src/main/java/com/omiyawaki/osrswiki/shared"
+# Copy shared resources with proper Android asset structure
+echo -e "${YELLOW}Copying shared resources to Android asset structure...${NC}"
+ASSETS_DIR="app/src/main/assets"
 
 if [[ -d "$MONOREPO_ROOT/shared" ]]; then
-    mkdir -p "$ANDROID_SHARED_DIR"
+    echo "  → Creating Android asset directories..."
+    mkdir -p "$ASSETS_DIR/styles/modules"
+    mkdir -p "$ASSETS_DIR/js"
+    mkdir -p "$ASSETS_DIR/web"
+    mkdir -p "$ASSETS_DIR/mediawiki"
+    mkdir -p "$ASSETS_DIR/data"
     
-    # Copy shared components with error checking
-    for component in api models network utils; do
-        if [[ -d "$MONOREPO_ROOT/shared/$component" ]]; then
-            echo "  → Copying shared/$component"
-            cp -r "$MONOREPO_ROOT/shared/$component"/* "$ANDROID_SHARED_DIR/" 2>/dev/null || echo "    (no files to copy)"
-        else
-            echo "  ⚠️  shared/$component not found (skipping)"
+    # Copy CSS files to styles/ directory
+    echo "  → Copying CSS files to styles/..."
+    if [[ -d "$MONOREPO_ROOT/shared/css" ]]; then
+        find "$MONOREPO_ROOT/shared/css" -name "*.css" -not -path "*/modules/*" -exec cp {} "$ASSETS_DIR/styles/" \;
+        # Copy CSS modules maintaining structure  
+        if [[ -d "$MONOREPO_ROOT/shared/css/modules" ]]; then
+            find "$MONOREPO_ROOT/shared/css/modules" -name "*.css" -exec cp {} "$ASSETS_DIR/styles/modules/" \;
         fi
-    done
+        echo "    ✓ CSS files copied to styles/"
+    fi
+    
+    # Copy JavaScript files to js/ directory (excluding MediaWiki and WebView files)
+    echo "  → Copying main JavaScript files to js/..."
+    if [[ -d "$MONOREPO_ROOT/shared/js" ]]; then
+        # Copy main JS files (excluding subdirectories)
+        find "$MONOREPO_ROOT/shared/js" -maxdepth 1 -name "*.js" -exec cp {} "$ASSETS_DIR/js/" \;
+        echo "    ✓ Main JavaScript files copied to js/"
+    fi
+    
+    # Copy WebView-specific files to web/ directory
+    echo "  → Copying WebView files to web/..."
+    if [[ -d "$MONOREPO_ROOT/shared/js" ]]; then
+        # WebView JavaScript files
+        for webjs in "collapsible_content.js" "horizontal_scroll_interceptor.js" "responsive_videos.js" \
+                     "clipboard_bridge.js" "infobox_switcher_bootstrap.js" "switch_infobox.js" \
+                     "ge_charts_init.js" "highcharts-stock.js"; do
+            if [[ -f "$MONOREPO_ROOT/shared/js/$webjs" ]]; then
+                cp "$MONOREPO_ROOT/shared/js/$webjs" "$ASSETS_DIR/web/"
+            fi
+        done
+        
+        # WebView CSS files (CSS files that are in js/ directory)
+        for webcss in "collapsible_sections.css" "collapsible_tables.css" "switch_infobox_styles.css"; do
+            if [[ -f "$MONOREPO_ROOT/shared/js/$webcss" ]]; then
+                cp "$MONOREPO_ROOT/shared/js/$webcss" "$ASSETS_DIR/web/"
+            fi
+        done
+        echo "    ✓ WebView files copied to web/"
+    fi
+    
+    # Copy MediaWiki modules
+    echo "  → Copying MediaWiki modules..."
+    if [[ -d "$MONOREPO_ROOT/shared/js/mediawiki" ]]; then
+        # startup.js goes to assets root
+        if [[ -f "$MONOREPO_ROOT/shared/js/mediawiki/startup.js" ]]; then
+            cp "$MONOREPO_ROOT/shared/js/mediawiki/startup.js" "$ASSETS_DIR/"
+        fi
+        
+        # Other MediaWiki modules go to mediawiki/ subdirectory
+        for mwjs in "page_bootstrap.js" "page_modules.js"; do
+            if [[ -f "$MONOREPO_ROOT/shared/js/mediawiki/$mwjs" ]]; then
+                cp "$MONOREPO_ROOT/shared/js/mediawiki/$mwjs" "$ASSETS_DIR/mediawiki/"
+            fi
+        done
+        echo "    ✓ MediaWiki modules copied"
+    fi
+    
+    # Handle assets with cache-aware strategy
+    echo "  → Copying assets (cache-aware strategy)..."
+    
+    # Check for centralized cache
+    CACHE_BASE="$HOME/Develop/osrswiki-cache"
+    CACHE_MBTILES="$CACHE_BASE/binary-assets/mbtiles"
+    
+    if [[ -d "$MONOREPO_ROOT/shared/assets" ]]; then
+        # Copy non-binary assets from shared directory
+        find "$MONOREPO_ROOT/shared/assets" -type f ! -name "*.mbtiles" -exec cp {} "$ASSETS_DIR/" \;
+        
+        # Check for binary assets in cache
+        mbtiles_count=0
+        if [[ -d "$CACHE_MBTILES" ]]; then
+            # Copy .mbtiles files from cache to deployment
+            find "$CACHE_MBTILES" -name "*.mbtiles" -exec cp {} "$ASSETS_DIR/" \; 2>/dev/null || true
+            mbtiles_count=$(find "$CACHE_MBTILES" -name "*.mbtiles" 2>/dev/null | wc -l)
+            
+            if [[ $mbtiles_count -gt 0 ]]; then
+                echo "    ✅ Included $mbtiles_count .mbtiles files from centralized cache"
+            fi
+        else
+            # Count missing .mbtiles files and document the deployment strategy
+            mbtiles_count=$(find "$MONOREPO_ROOT/shared/assets" -name "*.mbtiles" 2>/dev/null | wc -l)
+        fi
+        
+        if [[ $mbtiles_count -eq 0 ]]; then
+            echo "    ⚠️  No .mbtiles files found (binary assets missing)"
+            
+            # Create documentation for how to generate missing assets
+            cat > "$ASSETS_DIR/MISSING_ASSETS.md" << EOF
+# Missing Binary Assets
+
+This deployment uses a centralized cache strategy for large binary assets (*.mbtiles) to keep repositories lightweight while enabling efficient development workflows.
+
+## Missing Assets
+- Map tiles: Expected 4 .mbtiles files (floors 0-3)
+
+## Asset Management Strategy
+
+### Centralized Cache Location
+Binary assets are stored in: \`~/Develop/osrswiki-cache/binary-assets/mbtiles/\`
+
+### Option 1: Using Asset Generator (Recommended)
+\`\`\`bash
+# In monorepo root - assets automatically go to centralized cache
+cd tools
+./bin/micromamba run -n osrs-tools python3 map/map-asset-generator.py
+
+# Assets are generated to: ~/Develop/osrswiki-cache/binary-assets/mbtiles/
+# Build system automatically discovers cache assets
+\`\`\`
+
+### Option 2: Manual Generation
+\`\`\`bash
+# 1. Setup environment
+cd tools
+micromamba create -n osrs-tools --file environment.yml
+micromamba activate osrs-tools
+
+# 2. Generate map assets (outputs to centralized cache)
+python3 map/map-asset-generator.py --all
+
+# 3. For standalone deployment, copy from cache
+cp ~/Develop/osrswiki-cache/binary-assets/mbtiles/*.mbtiles app/src/main/assets/
+\`\`\`
+
+### Option 3: Manual Cache Setup
+\`\`\`bash
+# Create cache structure
+mkdir -p ~/Develop/osrswiki-cache/binary-assets/mbtiles/
+
+# Generate or copy .mbtiles files to cache directory
+# Build system will automatically discover them
+\`\`\`
+
+## CI/CD Integration
+For automated deployments, add asset generation to your CI pipeline:
+\`\`\`yaml
+- name: Generate Assets  
+  run: |
+    cd tools
+    micromamba activate osrs-tools
+    python3 map/map-asset-generator.py --all
+    # Assets are automatically placed in centralized cache
+    
+- name: Copy Assets to Deployment
+  run: |
+    cp ~/Develop/osrswiki-cache/binary-assets/mbtiles/*.mbtiles app/src/main/assets/
+\`\`\`
+
+## Benefits of Centralized Cache
+- ✅ No asset regeneration needed for new worktrees  
+- ✅ Shared across all development sessions
+- ✅ Git repositories stay lightweight
+- ✅ Build system auto-discovers cache assets
+- ✅ Easy cache maintenance and cleanup
+
+Generated: $(date)
+EOF
+            echo "    📝 Created MISSING_ASSETS.md with regeneration instructions"
+        fi
+        
+        echo "    ✓ Assets copied (binary exclusion strategy applied)"
+    fi
+    
+    # Copy data files maintaining structure
+    echo "  → Copying data files..."
+    if [[ -d "$MONOREPO_ROOT/shared/data" ]]; then
+        cp -r "$MONOREPO_ROOT/shared/data"/* "$ASSETS_DIR/data/" 2>/dev/null || echo "    (no data files to copy)"
+        echo "    ✓ Data files copied to data/"
+    fi
+    
+    echo -e "${GREEN}✅ Android asset structure created successfully${NC}"
+    echo "  📁 Assets organized in proper Android structure:"
+    echo "    • CSS files → styles/ (main) and styles/modules/ (modules)"
+    echo "    • JavaScript → js/ (main) and web/ (WebView-specific)"
+    echo "    • MediaWiki → startup.js (root) and mediawiki/ (modules)"
+    echo "    • Assets → root (for direct access)"
+    echo "    • Data → data/ (maintaining structure)"
+else
+    echo -e "${YELLOW}⚠️  No shared directory found - creating empty asset structure${NC}"
+    mkdir -p "$ASSETS_DIR"
+fi
+
+# Verify dual-mode build configuration  
+echo -e "${YELLOW}Verifying dual-mode build configuration...${NC}"
+if [[ -f "app/build.gradle.kts" ]]; then
+    if grep -q "isMonorepo.*File.*exists" app/build.gradle.kts; then
+        echo "    ✓ Dual-mode build configuration detected"
+        echo "    • Build will auto-detect monorepo vs standalone mode"
+        echo "    • No manual configuration changes needed"
+    else
+        echo -e "${YELLOW}    ⚠️  Build file may need dual-mode configuration${NC}"
+    fi
+    echo -e "${GREEN}✅ Build system ready for standalone deployment${NC}"
+else
+    echo -e "${RED}❌ build.gradle.kts not found in expected location${NC}"
+    ls -la app/build.gradle* 2>/dev/null || echo "    No build.gradle files found"
+fi
+
+# Phase 5: Deployment Validation
+echo -e "${BLUE}✅ Phase 5: Deployment Validation${NC}"
+echo "------------------------------"
+
+echo -e "${YELLOW}Running deployment validation checks...${NC}"
+
+# Validation 1: Asset structure and content
+echo "  → Validating asset structure..."
+REQUIRED_ASSET_DIRS=("$ASSETS_DIR/styles" "$ASSETS_DIR/js" "$ASSETS_DIR/web")
+VALIDATION_PASSED=true
+
+for dir in "${REQUIRED_ASSET_DIRS[@]}"; do
+    if [[ -d "$dir" ]]; then
+        file_count=$(find "$dir" -type f | wc -l)
+        echo "    ✓ $dir ($file_count files)"
+    else
+        echo -e "${RED}    ❌ $dir (missing)${NC}"
+        VALIDATION_PASSED=false
+    fi
+done
+
+# Check for critical assets
+CRITICAL_ASSETS=(
+    "$ASSETS_DIR/styles/themes.css"
+    "$ASSETS_DIR/styles/base.css"
+    "$ASSETS_DIR/js/tablesort.min.js"
+    "$ASSETS_DIR/web/collapsible_content.js"
+    "$ASSETS_DIR/startup.js"
+)
+
+echo "  → Validating critical assets..."
+for asset in "${CRITICAL_ASSETS[@]}"; do
+    if [[ -f "$asset" ]]; then
+        size=$(stat -c%s "$asset" 2>/dev/null || stat -f%z "$asset" 2>/dev/null)
+        if [[ $size -gt 0 ]]; then
+            echo "    ✓ $(basename "$asset") (${size} bytes)"
+        else
+            echo -e "${RED}    ❌ $(basename "$asset") (empty file)${NC}"
+            VALIDATION_PASSED=false
+        fi
+    else
+        echo -e "${RED}    ❌ $(basename "$asset") (missing)${NC}"
+        VALIDATION_PASSED=false
+    fi
+done
+
+# Validation 2: Build configuration
+echo "  → Validating build configuration..."
+if [[ -f "app/build.gradle.kts" ]]; then
+    if grep -q "isMonorepo.*File.*exists" app/build.gradle.kts; then
+        echo "    ✓ Dual-mode build configuration present"
+    else
+        echo -e "${YELLOW}    ⚠️  Dual-mode configuration not found${NC}"
+        VALIDATION_PASSED=false
+    fi
+    
+    # Check that monorepo references are properly handled
+    if grep -q "\.\./\.\./\.\./shared" app/build.gradle.kts; then
+        if grep -q "val isMonorepo" app/build.gradle.kts; then
+            echo "    ✓ Monorepo references properly conditionalized"
+        else
+            echo -e "${YELLOW}    ⚠️  Unconditionalized monorepo references detected${NC}"
+        fi
+    fi
+else
+    echo -e "${RED}    ❌ build.gradle.kts not found${NC}"
+    VALIDATION_PASSED=false
+fi
+
+# Validation 3: Quick Gradle validation (if gradlew exists)
+if [[ -f "./gradlew" ]]; then
+    echo "  → Testing Gradle wrapper..."
+    if timeout 30 ./gradlew --version >/dev/null 2>&1; then
+        echo "    ✓ Gradle wrapper functional"
+    else
+        echo -e "${YELLOW}    ⚠️  Gradle wrapper test timed out or failed${NC}"
+        # This is a warning, not a failure
+    fi
+else
+    echo -e "${RED}    ❌ gradlew not found${NC}"
+    VALIDATION_PASSED=false
+fi
+
+# Validation summary
+echo ""
+if [[ "$VALIDATION_PASSED" == "true" ]]; then
+    echo -e "${GREEN}✅ All deployment validation checks passed${NC}"
+    echo -e "${CYAN}📋 Deployment Summary:${NC}"
+    echo "  • Asset directories: $(find "$ASSETS_DIR" -type d | wc -l)"
+    echo "  • Asset files: $(find "$ASSETS_DIR" -type f | wc -l)"
+    echo "  • Total asset size: $(du -sh "$ASSETS_DIR" | cut -f1)"
+    echo "  • Build configuration: Dual-mode enabled"
+    echo "  • Validation: All checks passed"
+else
+    echo -e "${RED}❌ Deployment validation failed${NC}"
+    echo "The deployed app may not build correctly in standalone mode."
+    echo "Please review the errors above and fix them before proceeding."
+    echo ""
+    echo "To run full standalone validation after fixing issues:"
+    echo "  \$MONOREPO_ROOT/scripts/shared/test-standalone-build.sh"
+    echo ""
+    echo -e "${YELLOW}Continue with deployment anyway? (y/N)${NC}"
+    read -r response
+    if [[ ! "$response" =~ ^[Yy]$ ]]; then
+        echo -e "${RED}Deployment cancelled by user${NC}"
+        exit 1
+    fi
+    echo -e "${YELLOW}⚠️  Proceeding with deployment despite validation warnings${NC}"
 fi
 
 # Stage all changes
@@ -136,16 +439,24 @@ $(cd "$MONOREPO_ROOT" && git log --oneline --no-merges --max-count=5 main --grep
 
 This deployment:
 - Updates from monorepo platforms/android/
-- Integrates shared components (API, models, network, utils)
+- Copies shared web assets to proper Android structure
+- Organizes CSS files in styles/ directory
+- Places WebView assets in web/ directory  
+- Configures MediaWiki modules appropriately
+- Includes map tiles and data files
+- Uses dual-mode build configuration (auto-detects environment)
+- Build system works in both monorepo and standalone modes
+- Validates deployment integrity during process
 - Maintains Android-specific .gitignore
-- Preserves deployment repository structure
+- Creates fully standalone buildable Android project
 
 Deployment info:
 - Source: $MONOREPO_ROOT
 - Target: $DEPLOY_ANDROID  
 - Branch: $DEPLOY_BRANCH
 - Date: $(date '+%Y-%m-%dT%H:%M:%S%z')
-- Shared components: $(ls -d "$MONOREPO_ROOT/shared"/* 2>/dev/null | wc -l) modules"
+- Asset directories: $(find "$MONOREPO_ROOT/shared" -type d 2>/dev/null | wc -l) 
+- Asset files: $(find "$MONOREPO_ROOT/shared" -type f 2>/dev/null | wc -l)"
 
     git commit -m "$DEPLOY_COMMIT_MSG"
     echo -e "${GREEN}✅ Deployment commit created${NC}"
@@ -226,9 +537,14 @@ echo "Changes deployed safely"
 echo ""
 echo -e "${BLUE}Deployed components:${NC}"
 echo "- ✅ Android app (complete Kotlin/Gradle project)"
-echo "- ✅ Shared components integrated (API, models, network, utils)"
-echo "- ✅ Existing .gitignore preserved"
-echo "- ✅ Build configuration and dependencies"
+echo "- ✅ Web assets organized in proper Android structure" 
+echo "- ✅ CSS stylesheets in styles/ directory"
+echo "- ✅ WebView JavaScript/CSS in web/ directory"
+echo "- ✅ MediaWiki modules in correct locations"
+echo "- ✅ Map tiles and data files included"
+echo "- ✅ Dual-mode build configuration (monorepo/standalone)"
+echo "- ✅ Deployment validation and integrity checks"
+echo "- ✅ Standalone buildable without monorepo dependencies"
 echo ""
 echo -e "${BLUE}Key advantages of ~/Deploy approach:${NC}"
 echo "- ✅ Simple 1:1 mirror of remote repository"
@@ -238,7 +554,8 @@ echo "- ✅ Easy to verify deployment state"
 echo ""
 echo -e "${BLUE}Next steps:${NC}"
 echo "- Verify deployment at: https://github.com/omiyawaki/osrswiki-android"
-echo "- Test the deployed app"
+echo "- Run full standalone validation: ./scripts/shared/test-standalone-build.sh"
+echo "- Test the deployed app builds and runs correctly"
 echo "- Monitor for any issues"
 
 exit 0

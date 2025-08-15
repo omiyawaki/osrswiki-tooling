@@ -160,6 +160,7 @@ public class MapImageDumper
 		options.addOption(Option.builder().longOpt("cachedir").hasArg().required().build());
 		options.addOption(Option.builder().longOpt("xteapath").hasArg().required().build());
 		options.addOption(Option.builder().longOpt("outputdir").hasArg().required().build());
+		options.addOption(Option.builder().longOpt("floors").hasArg().desc("Comma-separated list of floor numbers to generate (0-3)").build());
 
 		CommandLineParser parser = new DefaultParser();
 		CommandLine cmd;
@@ -177,6 +178,7 @@ public class MapImageDumper
 		final String cacheDirectory = cmd.getOptionValue("cachedir");
 		final String xteaJSONPath = cmd.getOptionValue("xteapath");
 		final String outputDirectory = cmd.getOptionValue("outputdir");
+		final String floorsArg = cmd.getOptionValue("floors");
 
 		XteaKeyManager xteaKeyManager = new XteaKeyManager();
 		try (FileInputStream fin = new FileInputStream(xteaJSONPath))
@@ -195,11 +197,39 @@ public class MapImageDumper
 			MapImageDumper dumper = new MapImageDumper(store, xteaKeyManager);
 			dumper.load();
 
-			for (int i = 0; i < Region.Z; ++i)
-			{
-				BufferedImage image = dumper.drawMap(i);
+			// Determine which floors to process
+			java.util.List<Integer> floorsToProcess = new java.util.ArrayList<>();
+			if (floorsArg != null && !floorsArg.trim().isEmpty()) {
+				// Parse specific floors from command line
+				String[] floorStrings = floorsArg.split(",");
+				for (String floorStr : floorStrings) {
+					try {
+						int floor = Integer.parseInt(floorStr.trim());
+						if (floor >= 0 && floor < Region.Z) {
+							floorsToProcess.add(floor);
+						} else {
+							System.err.println("Invalid floor number: " + floor + " (must be 0-" + (Region.Z - 1) + ")");
+							System.exit(-1);
+						}
+					} catch (NumberFormatException e) {
+						System.err.println("Invalid floor number format: " + floorStr);
+						System.exit(-1);
+					}
+				}
+			} else {
+				// Process all floors (default behavior)
+				for (int i = 0; i < Region.Z; ++i) {
+					floorsToProcess.add(i);
+				}
+			}
 
-				File imageFile = new File(outDir, "img-" + i + ".png");
+			log.info("Processing {} floor(s): {}", floorsToProcess.size(), floorsToProcess);
+
+			for (int floor : floorsToProcess)
+			{
+				BufferedImage image = dumper.drawMap(floor);
+
+				File imageFile = new File(outDir, "img-" + floor + ".png");
 
 				ImageIO.write(image, "png", imageFile);
 				log.info("Wrote image {}", imageFile);
