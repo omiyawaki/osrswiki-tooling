@@ -43,11 +43,13 @@ class MetaAssetUpdater:
         self.script_dir = Path(__file__).parent
         self.map_tool = self.script_dir / "map" / "map-asset-generator.py"
         self.css_tool = self.script_dir / "css" / "css-perfect-sync.py"
+        self.js_discovery_tool = self.script_dir / "js-discovery" / "update_discovery.py"
         
         # Track execution results
         self.results = {
             'map': {'attempted': False, 'success': False, 'message': ''},
-            'css': {'attempted': False, 'success': False, 'message': ''}
+            'css': {'attempted': False, 'success': False, 'message': ''},
+            'js-discovery': {'attempted': False, 'success': False, 'message': ''}
         }
         
     def log(self, message: str, color: str = Colors.BLUE):
@@ -77,17 +79,19 @@ class MetaAssetUpdater:
         self.log(f"🔧 {message.upper()}", Colors.CYAN)
         self.log(f"{'='*60}", Colors.CYAN)
         
-    def validate_environment(self) -> bool:
+    def validate_environment(self, update_maps: bool = False, update_css: bool = False, update_js_discovery: bool = False) -> bool:
         """Validate that all required tools and dependencies exist"""
         self.log_info("Validating environment and dependencies...")
         
-        # Check that individual tools exist
+        # Check that individual tools exist (only for requested updates)
         missing_tools = []
         
-        if not self.map_tool.exists():
+        if update_maps and not self.map_tool.exists():
             missing_tools.append(f"Map tool: {self.map_tool}")
-        if not self.css_tool.exists():
+        if update_css and not self.css_tool.exists():
             missing_tools.append(f"CSS tool: {self.css_tool}")
+        if update_js_discovery and not self.js_discovery_tool.exists():
+            missing_tools.append(f"JS Discovery tool: {self.js_discovery_tool}")
             
         if missing_tools:
             self.log_error("Missing required tools:")
@@ -95,19 +99,20 @@ class MetaAssetUpdater:
                 self.log_error(f"  - {tool}")
             return False
             
-        # Check that tools are executable
-        if not os.access(self.map_tool, os.X_OK):
+        # Check that tools are executable (only for requested updates)
+        if update_maps and not os.access(self.map_tool, os.X_OK):
             self.log_error(f"Map tool is not executable: {self.map_tool}")
             return False
-        if not os.access(self.css_tool, os.X_OK):
+        if update_css and not os.access(self.css_tool, os.X_OK):
             self.log_error(f"CSS tool is not executable: {self.css_tool}")
             return False
         
-        # Check for micromamba
-        micromamba_path = self.script_dir / "bin" / "micromamba"
-        if not micromamba_path.exists():
-            self.log_error(f"Micromamba not found at {micromamba_path}")
-            return False
+        # Check for micromamba (only needed for maps and CSS)
+        if (update_maps or update_css):
+            micromamba_path = self.script_dir / "bin" / "micromamba"
+            if not micromamba_path.exists():
+                self.log_error(f"Micromamba not found at {micromamba_path}")
+                return False
             
         self.log_success("Environment validation passed")
         return True
@@ -205,6 +210,56 @@ class MetaAssetUpdater:
         
         return success
         
+    def update_js_discovery(self, pass_through_args: List[str] = None) -> bool:
+        """Update JS module discovery using the discovery tool"""
+        self.log_section("JS Module Discovery Update")
+        self.results['js-discovery']['attempted'] = True
+        
+        # Use standard Python interpreter for JS discovery (no micromamba needed)
+        args = pass_through_args if pass_through_args else []
+        success, message = self.run_js_discovery_tool(args)
+        self.results['js-discovery']['success'] = success
+        self.results['js-discovery']['message'] = message
+        
+        return success
+        
+    def run_js_discovery_tool(self, args: List[str] = None) -> Tuple[bool, str]:
+        """Run the JS discovery tool using standard Python"""
+        if args is None:
+            args = []
+            
+        cmd = [sys.executable, str(self.js_discovery_tool)] + args
+        self.log_info("Executing JS Discovery scan...")
+        self.log(f"Command: {' '.join(cmd)}", Colors.BLUE)
+        
+        try:
+            start_time = time.time()
+            result = subprocess.run(
+                cmd,
+                cwd=self.script_dir,
+                capture_output=True,
+                text=True,
+                timeout=600  # 10 minute timeout for JS discovery
+            )
+            
+            execution_time = time.time() - start_time
+            
+            if result.returncode == 0:
+                self.log_success(f"JS Discovery completed successfully in {execution_time:.1f}s")
+                return True, f"Discovery scan completed in {execution_time:.1f}s"
+            else:
+                self.log_error(f"JS Discovery failed with return code {result.returncode}")
+                if result.stderr:
+                    self.log_error(f"Error output: {result.stderr}")
+                return False, f"Discovery failed: {result.stderr or 'Unknown error'}"
+                
+        except subprocess.TimeoutExpired:
+            self.log_error("JS Discovery timed out after 10 minutes")
+            return False, "Discovery timed out"
+        except Exception as e:
+            self.log_error(f"Failed to execute JS Discovery: {str(e)}")
+            return False, f"Execution failed: {str(e)}"
+        
     def print_summary(self):
         """Print a comprehensive summary of all operations performed"""
         self.log_section("Update Summary")
@@ -233,14 +288,14 @@ class MetaAssetUpdater:
         else:
             self.log_error("❌ All asset updates failed")
             
-    def run_updates(self, update_maps: bool, update_css: bool, pass_through_args: List[str] = None) -> bool:
+    def run_updates(self, update_maps: bool, update_css: bool, update_js_discovery: bool = False, pass_through_args: List[str] = None) -> bool:
         """Run the specified updates"""
-        if not update_maps and not update_css:
-            self.log_error("No update types specified. Use --all, --maps, or --css")
+        if not update_maps and not update_css and not update_js_discovery:
+            self.log_error("No update types specified. Use --all, --maps, --css, or --js-discovery")
             return False
             
         # Validate environment first
-        if not self.validate_environment():
+        if not self.validate_environment(update_maps, update_css, update_js_discovery):
             return False
             
         overall_success = True
@@ -254,6 +309,10 @@ class MetaAssetUpdater:
             if not self.update_css_assets(pass_through_args):
                 overall_success = False
                 
+        if update_js_discovery:
+            if not self.update_js_discovery(pass_through_args):
+                overall_success = False
+                
         return overall_success
 
 
@@ -264,9 +323,10 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  %(prog)s --all                    Update both maps and CSS
+  %(prog)s --all                    Update maps, CSS, and JS discovery
   %(prog)s --maps --force           Force update map assets only
   %(prog)s --css                    Update CSS assets only
+  %(prog)s --js-discovery           Update JS module discovery only
   %(prog)s --all --dry-run          Preview what would be updated
   %(prog)s --all --verify           Verify all assets exist and are up to date
         """
@@ -277,7 +337,7 @@ Examples:
     target_group.add_argument(
         "--all",
         action="store_true",
-        help="Update both map and CSS assets"
+        help="Update map, CSS, and JS discovery assets"
     )
     target_group.add_argument(
         "--maps",
@@ -288,6 +348,11 @@ Examples:
         "--css",
         action="store_true",
         help="Update only CSS assets"
+    )
+    target_group.add_argument(
+        "--js-discovery",
+        action="store_true",
+        help="Update only JS module discovery"
     )
     
     # Pass-through arguments for underlying tools
@@ -321,6 +386,7 @@ Examples:
     # Determine what to update
     update_maps = args.all or args.maps
     update_css = args.all or args.css
+    update_js_discovery = args.all or getattr(args, 'js_discovery', False)
     
     # Build pass-through arguments
     pass_through_args = []
@@ -337,7 +403,7 @@ Examples:
     updater = MetaAssetUpdater()
     
     try:
-        success = updater.run_updates(update_maps, update_css, pass_through_args)
+        success = updater.run_updates(update_maps, update_css, update_js_discovery, pass_through_args)
         updater.print_summary()
         
         sys.exit(0 if success else 1)

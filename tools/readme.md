@@ -103,7 +103,7 @@ This will create `map_floor_0.mbtiles`, `map_floor_1.mbtiles`, etc., and place t
 For maximum convenience, use the unified meta wrapper that orchestrates all asset generation tools:
 
 ```bash
-# Update both map and CSS assets
+# Update all assets (maps, CSS, and JS discovery)
 python3 asset-updater.py --all
 
 # Update only map assets with force regeneration
@@ -111,6 +111,9 @@ python3 asset-updater.py --maps --force
 
 # Update only CSS assets
 python3 asset-updater.py --css
+
+# Update only JS module discovery
+python3 asset-updater.py --js-discovery
 
 # Preview what would be updated (dry-run for maps)
 python3 asset-updater.py --all --dry-run
@@ -125,7 +128,7 @@ python3 asset-updater.py --maps --check-freshness
 The meta updater:
 - ✅ **Unified Interface**: Single command for all asset types
 - ✅ **Automatic Environment**: Uses local micromamba with proper dependencies  
-- ✅ **Smart Orchestration**: Coordinates map and CSS tool execution
+- ✅ **Smart Orchestration**: Coordinates map, CSS, and JS discovery tool execution
 - ✅ **Pass-through Arguments**: Forwards options to underlying tools
 - ✅ **Comprehensive Reporting**: Detailed progress and summary output
 - ✅ **Error Handling**: Graceful failure handling with clear diagnostics
@@ -168,4 +171,30 @@ For CSS-specific workflows, use the CSS perfect sync tool:
 # Achieve perfect CSS parity with reference
 python3 css/css-perfect-sync.py
 ```
+
+### JS Module Discovery Only
+
+For JavaScript module discovery and tracking:
+
+```bash
+# Run discovery scan on sample pages
+python3 js-discovery/update_discovery.py
+
+# View current implementation status
+python3 js-discovery/update_discovery.py --summary-only
+
+# Generate comprehensive report
+python3 js-discovery/generate_report.py
+
+# Initialize masterlists from existing data (first time only)
+python3 js-discovery/initialize_masterlists.py
+```
+
+The JS discovery system:
+- ✅ Accumulative tracking of all discovered modules across scans
+- ✅ Smart deduplication prevents data corruption
+- ✅ Implementation mapping connects wiki modules to app code
+- ✅ Priority scoring identifies high-impact unimplemented modules
+- ✅ Overlap detection finds functional similarities between modules
+- ✅ Comprehensive reporting shows implementation progress
 
