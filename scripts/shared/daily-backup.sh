@@ -96,6 +96,82 @@ cleanup_failed_backups() {
     fi
 }
 
+# Function to implement tiered retention policy
+tiered_retention_cleanup() {
+    local cleaned=0
+    local current_date=$(date +%s)
+    
+    log "Applying tiered retention policy..."
+    
+    if [[ -d "$BACKUP_BASE_DIR" ]]; then
+        # Clean daily backups (auto) older than DAILY_RETENTION_DAYS
+        while IFS= read -r -d '' backup_dir; do
+            local backup_age_seconds=$((current_date - $(stat -f%m "$backup_dir")))
+            local backup_age_days=$((backup_age_seconds / 86400))
+            
+            if [[ $backup_age_days -gt $DAILY_RETENTION_DAYS ]]; then
+                log "Removing old daily backup: $(basename "$backup_dir") (${backup_age_days} days old)"
+                rm -rf "$backup_dir"
+                
+                # Also remove associated tar.gz file
+                local tar_file="${backup_dir}.tar.gz"
+                if [[ -f "$tar_file" ]]; then
+                    rm -f "$tar_file"
+                    log "Removed associated archive: $(basename "$tar_file")"
+                fi
+                
+                ((cleaned++))
+            fi
+        done < <(find "$BACKUP_BASE_DIR" -type d -name "*-auto-*" -print0 2>/dev/null)
+        
+        # Clean deployment backups older than WEEKLY_RETENTION_DAYS
+        while IFS= read -r -d '' backup_dir; do
+            local backup_age_seconds=$((current_date - $(stat -f%m "$backup_dir")))
+            local backup_age_days=$((backup_age_seconds / 86400))
+            
+            if [[ $backup_age_days -gt $WEEKLY_RETENTION_DAYS ]]; then
+                log "Removing old deployment backup: $(basename "$backup_dir") (${backup_age_days} days old)"
+                rm -rf "$backup_dir"
+                
+                # Also remove associated tar.gz file
+                local tar_file="${backup_dir}.tar.gz"
+                if [[ -f "$tar_file" ]]; then
+                    rm -f "$tar_file"
+                    log "Removed associated archive: $(basename "$tar_file")"
+                fi
+                
+                ((cleaned++))
+            fi
+        done < <(find "$BACKUP_BASE_DIR" -type d -name "*deploy-*" -print0 2>/dev/null)
+        
+        # Clean emergency backups older than EMERGENCY_RETENTION_DAYS
+        while IFS= read -r -d '' backup_dir; do
+            local backup_age_seconds=$((current_date - $(stat -f%m "$backup_dir")))
+            local backup_age_days=$((backup_age_seconds / 86400))
+            
+            if [[ $backup_age_days -gt $EMERGENCY_RETENTION_DAYS ]]; then
+                log "Removing old emergency backup: $(basename "$backup_dir") (${backup_age_days} days old)"
+                rm -rf "$backup_dir"
+                
+                # Also remove associated tar.gz file
+                local tar_file="${backup_dir}.tar.gz"
+                if [[ -f "$tar_file" ]]; then
+                    rm -f "$tar_file"
+                    log "Removed associated archive: $(basename "$tar_file")"
+                fi
+                
+                ((cleaned++))
+            fi
+        done < <(find "$BACKUP_BASE_DIR" -type d -name "*emergency-*" -print0 2>/dev/null)
+    fi
+    
+    if [[ $cleaned -gt 0 ]]; then
+        log_success "Tiered retention cleanup: removed $cleaned backups"
+    else
+        log "No backups exceeded retention policies"
+    fi
+}
+
 # Function to enforce size-based cleanup
 enforce_size_limit() {
     local current_size_gb=$(get_size_gb "$BACKUP_BASE_DIR")
