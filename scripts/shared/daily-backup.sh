@@ -263,15 +263,20 @@ if [[ $LOG_LINES -gt $MAX_LOG_LINES ]]; then
 fi
 
 # Generate summary
-TOTAL_BACKUPS=$(find "$HOME/Backups/osrswiki" -name "*backup*.bundle" 2>/dev/null | wc -l)
-TOTAL_SIZE=$(du -sh "$HOME/Backups/osrswiki" 2>/dev/null | cut -f1 || echo "unknown")
+TOTAL_BACKUPS=$(find "$BACKUP_BASE_DIR" -name "*.bundle" 2>/dev/null | wc -l)
+TOTAL_DIRECTORIES=$(find "$BACKUP_BASE_DIR" -maxdepth 1 -type d \( -name "*-auto-*" -o -name "*deploy-*" -o -name "*emergency-*" \) 2>/dev/null | wc -l)
+TOTAL_SIZE=$(du -sh "$BACKUP_BASE_DIR" 2>/dev/null | cut -f1 || echo "unknown")
+TOTAL_SIZE_GB=$(get_size_gb "$BACKUP_BASE_DIR")
 
 log "====================================="
 log "Daily Backup Summary"
 log "====================================="
 log "Status: $(if [[ "$BACKUP_SUCCESS" == true ]]; then echo "SUCCESS"; else echo "FAILED"; fi)"
-log "Total backups available: $TOTAL_BACKUPS"
-log "Total backup size: $TOTAL_SIZE"
+log "Total backup directories: $TOTAL_DIRECTORIES"
+log "Total bundle files: $TOTAL_BACKUPS"
+log "Total backup size: $TOTAL_SIZE (${TOTAL_SIZE_GB}GB)"
+log "Size limit: ${MAX_BACKUP_SIZE_GB}GB"
+log "Retention policy: ${MAX_BACKUP_AGE_DAYS} days"
 log "Log file: $LOG_FILE"
 log "====================================="
 
