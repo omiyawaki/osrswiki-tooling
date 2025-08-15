@@ -81,8 +81,8 @@ case "$PLATFORM" in
         fi
         
         # Check for Android build files
-        if [[ ! -f "platforms/android/build.gradle" ]]; then
-            validation_error "Android build.gradle not found"
+        if [[ ! -f "platforms/android/build.gradle.kts" && ! -f "platforms/android/build.gradle" ]]; then
+            validation_error "Android build configuration not found (looking for build.gradle.kts or build.gradle)"
         else
             validation_success "Android build configuration found"
         fi
