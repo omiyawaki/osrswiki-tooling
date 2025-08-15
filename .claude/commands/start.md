@@ -76,7 +76,7 @@ plan → implement → scaffold → test
 
 ## Session Complete - Development Ready!
 
-After the orchestrator completes session setup and spawns workers, you'll have:
+After Claude completes session setup, you'll have:
 
 ### ✅ Infrastructure Ready
 - **Isolated worktree session** in `~/Develop/osrswiki-sessions/claude-YYYYMMDD-HHMMSS-<topic>`
@@ -84,27 +84,20 @@ After the orchestrator completes session setup and spawns workers, you'll have:
 - **Session devices** connected and ready (emulator/simulator)
 - **Git branch** created with initial session commit
 
-### ✅ Workers Active
-- **Orchestrator** coordinating overall progress
-- **Worker(s)** progressing through development workflow:
-  - Simple task: 1 worker handling plan→implement→scaffold→test
-  - Complex task: Multiple workers handling different components in parallel
-  - Each worker can spawn sub-workers if needed
-
-### ✅ Parallel Development
-- **Multiple features** can develop simultaneously
-- **Independent progress** - each worker moves at optimal pace
-- **Automatic coordination** - orchestrator manages dependencies and conflicts
-- **Real-time progress** - todo lists track all worker progress
+### ✅ Development Environment
+- **Clean workspace** isolated from main repository
+- **Platform tools** configured and ready
+- **Development scripts** available for build, test, and deployment
+- **Session-specific configuration** tailored to your task
 
 ### 🎯 What Happens Next
 
-The spawned workers will automatically:
-1. **Plan** their assigned components
-2. **Implement** the code
+You can now work on your task using:
+1. **Plan** your implementation approach
+2. **Implement** the code changes
 3. **Scaffold** comprehensive tests
 4. **Test** with quality gates
 
-You can monitor progress through the todo lists and worker updates. The orchestrator coordinates everything automatically!
+Use additional commands like `/merge` when ready to integrate your changes back to main.
 
-**🚀 Development session is active!** Your recursive worker system is now handling the development workflow with optimal parallelization.
+**🚀 Development session is active!** You're ready to start working on your task in an isolated, properly configured environment.
