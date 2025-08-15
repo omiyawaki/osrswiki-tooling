@@ -37,8 +37,8 @@ backup_repository() {
     if [[ -d "$repo_path" ]] && [[ -d "$repo_path/.git" ]]; then
         cd "$repo_path"
         
-        # Create git bundle with all refs
-        if git bundle create "$BACKUP_DIR/${bundle_name}.bundle" --all; then
+        # Create git bundle with all refs, handle corrupted history gracefully
+        if git bundle create "$BACKUP_DIR/${bundle_name}.bundle" --all 2>/dev/null; then
             echo -e "${GREEN}✅ $repo_name backup created${NC}"
             
             # Get some metadata
