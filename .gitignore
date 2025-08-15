@@ -11,9 +11,10 @@
 !package.json
 !/*.md
 
-# Allow directories and their contents
-!/platforms/
-!/platforms/**
+# Allow directories and their contents  
+# Note: platforms/ excluded for tooling deployment (deployed separately to platform-specific repos)
+# !/platforms/
+# !/platforms/**
 !/shared/
 !/shared/**
 !/tools/
