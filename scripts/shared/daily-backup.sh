@@ -14,10 +14,15 @@ NC='\033[0m' # No Color
 # Configuration
 BACKUP_TYPE="daily-auto"
 LOG_FILE="$HOME/Backups/osrswiki/daily-backup.log"
-MAX_BACKUP_AGE_DAYS=30
 MAX_LOG_LINES=1000
 MAX_BACKUP_SIZE_GB=10  # Maximum total backup directory size in GB
 BACKUP_BASE_DIR="$HOME/Backups/osrswiki"
+
+# Tiered retention policy (in days)
+DAILY_RETENTION_DAYS=7      # Keep daily backups for 7 days
+WEEKLY_RETENTION_DAYS=30    # Keep weekly backups for 30 days  
+MONTHLY_RETENTION_DAYS=90   # Keep monthly backups for 90 days
+EMERGENCY_RETENTION_DAYS=14 # Keep emergency backups for 14 days
 
 # Ensure log directory exists
 mkdir -p "$(dirname "$LOG_FILE")"
