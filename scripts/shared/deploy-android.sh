@@ -95,10 +95,60 @@ git checkout -b "$DEPLOY_BRANCH"
 print_info "Clearing existing content..."
 find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
 
-# Copy Android platform content
-print_info "Copying Android platform content..."
-cp -r "$MONOREPO_ROOT/platforms/android"/* .
+# CRITICAL SECURITY: Validate Android platform directory before copying
+print_info "🔍 Validating Android platform content for security..."
+
+# Check for monorepo contamination in platforms/android
+if [[ -d "$MONOREPO_ROOT/platforms/android/.claude" ]]; then
+    print_error "🚨 SECURITY ALERT: .claude directory found in platforms/android"
+    print_error "This indicates monorepo contamination. Deployment BLOCKED."
+    exit 1
+fi
+
+if [[ -d "$MONOREPO_ROOT/platforms/android/platforms" ]]; then
+    print_error "🚨 SECURITY ALERT: nested platforms directory found"
+    print_error "This indicates monorepo contamination. Deployment BLOCKED."
+    exit 1
+fi
+
+if [[ -f "$MONOREPO_ROOT/platforms/android/CLAUDE.md" ]]; then
+    print_error "🚨 SECURITY ALERT: CLAUDE.md found in platforms/android"
+    print_error "This indicates monorepo contamination. Deployment BLOCKED."
+    exit 1
+fi
+
+# Count files to detect if entire monorepo was copied to platforms/android
+# Exclude build directories which can contain thousands of generated files
+ANDROID_FILE_COUNT=$(find "$MONOREPO_ROOT/platforms/android" -type f ! -path "*/build/*" | wc -l)
+BUILD_FILE_COUNT=$(find "$MONOREPO_ROOT/platforms/android" -type f -path "*/build/*" | wc -l)
+
+if [[ $ANDROID_FILE_COUNT -gt 2000 ]]; then
+    print_error "🚨 SECURITY ALERT: Excessive source file count ($ANDROID_FILE_COUNT files, $BUILD_FILE_COUNT build files)"
+    print_error "This suggests monorepo contamination. Expected < 1000 source files for Android platform."
+    print_error "Deployment BLOCKED to prevent repository corruption."
+    exit 1
+fi
+
+if [[ $BUILD_FILE_COUNT -gt 0 ]]; then
+    print_warning " Build artifacts detected ($BUILD_FILE_COUNT files) - will be excluded from deployment"
+fi
+
+print_success "Android platform validation passed ($ANDROID_FILE_COUNT files)"
+
+# Copy Android platform content (excluding build artifacts)
+print_info "Copying Android platform content (excluding build directories)..."
+
+# Copy everything except build directories
+find "$MONOREPO_ROOT/platforms/android" -mindepth 1 -maxdepth 1 ! -name 'build' -exec cp -r {} . \;
+
+# Copy .gitignore if it exists
 cp "$MONOREPO_ROOT/platforms/android/.gitignore" . 2>/dev/null || true
+
+# Clean any build directories that might have been copied
+if [[ -d "app/build" ]]; then
+    print_info "Removing build artifacts from deployment..."
+    find . -type d -name "build" -exec rm -rf {} + 2>/dev/null || true
+fi
 
 # Copy shared resources with proper Android asset structure
 print_info "Copying shared resources to Android asset structure..."
@@ -419,6 +469,65 @@ else
     fi
     print_warning " Proceeding with deployment despite validation warnings"
 fi
+
+# CRITICAL SECURITY: Final deployment validation
+print_info "🔒 Performing final deployment security validation..."
+
+# Check deployment directory for contamination
+if [[ -d ".claude" ]]; then
+    print_error "🚨 DEPLOYMENT CONTAMINATION: .claude directory found in deployment"
+    print_error "Removing contamination..."
+    rm -rf .claude
+    print_warning " .claude directory removed from deployment"
+fi
+
+if [[ -d "platforms" ]]; then
+    print_error "🚨 DEPLOYMENT CONTAMINATION: platforms directory found in deployment"
+    print_error "This indicates monorepo content was deployed. Deployment BLOCKED."
+    exit 1
+fi
+
+if [[ -f "CLAUDE.md" ]]; then
+    print_error "🚨 DEPLOYMENT CONTAMINATION: CLAUDE.md found in deployment"
+    print_error "This indicates monorepo content was deployed. Deployment BLOCKED."
+    exit 1
+fi
+
+if [[ -d "shared" ]]; then
+    print_error "🚨 DEPLOYMENT CONTAMINATION: shared directory found in deployment"
+    print_error "Shared content should be copied to assets, not deployed as-is. Deployment BLOCKED."
+    exit 1
+fi
+
+if [[ -d "tools" ]]; then
+    print_error "🚨 DEPLOYMENT CONTAMINATION: tools directory found in deployment"
+    print_error "This indicates monorepo content was deployed. Deployment BLOCKED."
+    exit 1
+fi
+
+# Verify Android-specific structure exists
+if [[ ! -f "app/build.gradle.kts" ]]; then
+    print_error "🚨 DEPLOYMENT STRUCTURE ERROR: app/build.gradle.kts not found"
+    print_error "This suggests Android platform structure is missing. Deployment BLOCKED."
+    exit 1
+fi
+
+if [[ ! -f "gradlew" ]]; then
+    print_error "🚨 DEPLOYMENT STRUCTURE ERROR: gradlew not found"
+    print_error "This suggests Android platform structure is missing. Deployment BLOCKED."
+    exit 1
+fi
+
+# Final file count check
+DEPLOY_FILE_COUNT=$(find . -type f ! -path './.git/*' | wc -l)
+if [[ $DEPLOY_FILE_COUNT -gt 1500 ]]; then
+    print_error "🚨 DEPLOYMENT SIZE ERROR: Excessive file count ($DEPLOY_FILE_COUNT files)"
+    print_error "Android deployment should have < 1000 files. This suggests contamination."
+    print_error "Deployment BLOCKED to prevent repository corruption."
+    exit 1
+fi
+
+print_success "Final deployment validation passed ($DEPLOY_FILE_COUNT files)"
 
 # Stage all changes
 git add -A

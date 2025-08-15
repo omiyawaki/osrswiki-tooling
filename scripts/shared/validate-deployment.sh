@@ -151,43 +151,35 @@ else
     validation_warning "Shared components directory not found"
 fi
 
-# Git remote validation
-echo -e "${YELLOW}📋 Phase 4: Git Remote Validation${NC}"
-echo "--------------------------------"
+# Git remote validation (DISABLED for zero-access security architecture)
+echo -e "${YELLOW}📋 Phase 4: Security Architecture Validation${NC}"
+echo "----------------------------------------"
 
-# Check that required remote exists for platform
-EXPECTED_REMOTE=""
-case "$PLATFORM" in
-    "android")
-        EXPECTED_REMOTE="android"
-        ;;
-    "ios")
-        EXPECTED_REMOTE="ios"
-        ;;
-    "tooling")
-        EXPECTED_REMOTE="tooling"
-        ;;
-esac
+# SECURITY: Main monorepo should NOT have deployment remotes
+# This enforces the zero-access deployment policy from CLAUDE.md
+DEPLOYMENT_REMOTES=("android" "ios" "tooling")
+FOUND_DEPLOYMENT_REMOTES=()
 
-if [[ -n "$EXPECTED_REMOTE" ]]; then
-    if git remote | grep -q "^${EXPECTED_REMOTE}$"; then
-        validation_success "Remote '$EXPECTED_REMOTE' configured"
-        
-        # Check remote URL
-        REMOTE_URL=$(git remote get-url "$EXPECTED_REMOTE")
-        echo "  Remote URL: $REMOTE_URL"
-        
-        # Try to fetch from remote to check connectivity
-        echo -e "${BLUE}🔍 Testing remote connectivity...${NC}"
-        if git fetch "$EXPECTED_REMOTE" --dry-run &>/dev/null; then
-            validation_success "Remote '$EXPECTED_REMOTE' is accessible"
-        else
-            validation_error "Cannot access remote '$EXPECTED_REMOTE'"
-        fi
-    else
-        validation_error "Required remote '$EXPECTED_REMOTE' not configured"
-        echo "Add it with: git remote add $EXPECTED_REMOTE <URL>"
+for remote in "${DEPLOYMENT_REMOTES[@]}"; do
+    if git remote | grep -q "^${remote}$"; then
+        FOUND_DEPLOYMENT_REMOTES+=("$remote")
     fi
+done
+
+if [[ ${#FOUND_DEPLOYMENT_REMOTES[@]} -gt 0 ]]; then
+    validation_error "Security violation: deployment remotes found in main monorepo"
+    echo "Found remotes: ${FOUND_DEPLOYMENT_REMOTES[*]}"
+    echo "Remove with: git remote remove <remote-name>"
+    echo "CLAUDE.md requires zero-access deployment architecture"
+else
+    validation_success "Zero-access security architecture verified (no deployment remotes)"
+fi
+
+# Verify deployment directory structure exists or will be created
+if [[ -d "$HOME/Deploy" ]]; then
+    validation_success "Deployment infrastructure exists at ~/Deploy"
+else
+    validation_warning "~/Deploy directory will be created during deployment"
 fi
 
 # Check for potential contamination

@@ -68,6 +68,46 @@ if ! command -v emulator >/dev/null 2>&1; then
         exit 1
     fi
 fi
+
+# Check for orphaned emulators before creating new session
+echo "🔍 Checking for orphaned session emulators..."
+if command -v avdmanager >/dev/null 2>&1; then
+    ORPHANED_EMULATORS=($(avdmanager list avd | grep "Name: test-claude-" | sed 's/^.*Name: //' || true))
+    SESSIONS_DIR="$HOME/Develop/osrswiki-sessions"
+    ACTIVE_SESSIONS=()
+    if [[ -d "$SESSIONS_DIR" ]]; then
+        ACTIVE_SESSIONS=($(find "$SESSIONS_DIR" -maxdepth 1 -type d -name "claude-*" -exec basename {} \; 2>/dev/null || true))
+    fi
+    
+    # Count truly orphaned emulators
+    TRULY_ORPHANED=0
+    for emulator in "${ORPHANED_EMULATORS[@]}"; do
+        session_name="${emulator#test-}"
+        is_orphaned=true
+        for active_session in "${ACTIVE_SESSIONS[@]}"; do
+            if [[ "$session_name" == "$active_session" ]]; then
+                is_orphaned=false
+                break
+            fi
+        done
+        if [[ "$is_orphaned" == "true" ]]; then
+            ((TRULY_ORPHANED++))
+        fi
+    done
+    
+    if [[ $TRULY_ORPHANED -gt 0 ]]; then
+        echo "⚠️  Found $TRULY_ORPHANED orphaned emulators from previous sessions"
+        echo "💡 Consider running: ./scripts/shared/cleanup-orphaned-emulators.sh"
+        echo "   This will clean up orphaned emulators and improve Android Studio performance"
+        echo ""
+    else
+        echo "✅ No orphaned emulators detected"
+    fi
+else
+    echo "⚠️  avdmanager not available, skipping orphan check"
+fi
+echo ""
+
 # Architecture and system image detection
 if [ "$IS_CONTAINER_ENV" = true ]; then
     # Containers are typically x86_64 regardless of host architecture
