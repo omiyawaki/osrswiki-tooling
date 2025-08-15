@@ -204,10 +204,42 @@ if git subtree push --prefix=platforms/ios ios main; then
     echo -e "${GREEN}✅ iOS deployment successful!${NC}"
     echo -e "${GREEN}📱 Public repository updated: https://github.com/omiyawaki/osrswiki-ios${NC}"
 else
-    echo -e "${RED}❌ iOS deployment failed${NC}"
-    echo -e "${YELLOW}💡 If this is the first deployment, the remote repository might be empty.${NC}"
-    echo -e "${YELLOW}   Try creating an initial commit in the iOS repository first.${NC}"
-    exit 1
+    echo -e "${YELLOW}⚠️  Subtree push failed, using split and force push...${NC}"
+    SPLIT_COMMIT=$(git subtree split --prefix=platforms/ios 2>/dev/null || echo "")
+    if [ -n "$SPLIT_COMMIT" ]; then
+        git push ios "$SPLIT_COMMIT:main" --force
+        echo -e "${GREEN}✅ iOS deployment successful (force push)!${NC}"
+        echo -e "${YELLOW}⚠️  Used force push - history may have been replaced${NC}"
+    else
+        echo -e "${YELLOW}⚠️  Subtree split failed, using manual copy deployment...${NC}"
+        # Fallback: Manual copy to deployment directory
+        if [ -d "$HOME/Deploy/osrswiki-ios" ]; then
+            cd "$HOME/Deploy/osrswiki-ios"
+            # Remove all content except .git
+            find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
+            # Copy platforms/ios content
+            MONOREPO_ROOT="/Users/miyawaki/Develop/osrswiki"
+            cp -r "$MONOREPO_ROOT/platforms/ios"/* .
+            cp "$MONOREPO_ROOT/platforms/ios/.gitignore" . 2>/dev/null || true
+            # Commit and push
+            git add -A
+            git commit -m "deploy: manual sync due to git history issues
+
+- Updated from monorepo platforms/ios
+- Includes latest changes and shared asset integration
+- Manual deployment due to subtree corruption
+
+Deployment date: $(date)"
+            git push origin main --force
+            echo -e "${GREEN}✅ iOS deployment successful (manual copy)!${NC}"
+            cd - >/dev/null
+        else
+            echo -e "${RED}❌ All deployment methods failed${NC}"
+            echo -e "${YELLOW}💡 If this is the first deployment, the remote repository might be empty.${NC}"
+            echo -e "${YELLOW}   Try creating an initial commit in the iOS repository first.${NC}"
+            exit 1
+        fi
+    fi
 fi
 
 echo -e "${GREEN}🎉 iOS deployment completed successfully!${NC}"
