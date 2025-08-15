@@ -94,9 +94,9 @@ mkdir -p "$TEMP_STAGING"
 
 echo -e "${YELLOW}Copying tooling components to staging area...${NC}"
 
-# Copy all directories except platforms/, preserving structure
+# Copy all directories except platforms/ and scripts-shared/, preserving structure
 for dir in */; do
-    if [[ "$dir" != "platforms/" ]]; then
+    if [[ "$dir" != "platforms/" && "$dir" != "scripts-shared/" ]]; then
         echo "  → Copying $dir"
         # Use cp to preserve directory structure, handle symlinks carefully
         if cp -r "$dir" "$TEMP_STAGING/" 2>/dev/null; then
@@ -105,8 +105,10 @@ for dir in */; do
         else
             echo "    ⚠️  Warning: Could not copy $dir"
         fi
-    else
+    elif [[ "$dir" == "platforms/" ]]; then
         echo "  ⏭️  Skipping platforms/ (deployed separately)"
+    elif [[ "$dir" == "scripts-shared/" ]]; then
+        echo "  ⏭️  Skipping scripts-shared/ (worktree artifact, not part of monorepo)"
     fi
 done
 
