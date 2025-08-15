@@ -97,13 +97,13 @@ echo -e "${YELLOW}Copying tooling components to staging area...${NC}"
 # Copy all directories except platforms/, handling symlinks properly
 for dir in */; do
     if [[ "$dir" != "platforms/" ]]; then
-        # Skip symlinks that might cause cycles
-        if [[ -L "$dir" ]]; then
-            echo "  ⏭️  Skipping symlink: $dir"
-        else
-            echo "  → Copying $dir"
-            cp -r "$dir" "$TEMP_STAGING/"
-        fi
+        echo "  → Copying $dir"
+        # Use rsync for better symlink handling and to avoid cycles
+        rsync -aL --exclude='scripts' "$dir" "$TEMP_STAGING/" 2>/dev/null || {
+            echo "    ⚠️  Warning: Some files in $dir could not be copied (symlink cycles?)"
+            # Fallback: copy without following symlinks
+            cp -r "$dir" "$TEMP_STAGING/" 2>/dev/null || echo "    ❌ Failed to copy $dir"
+        }
     else
         echo "  ⏭️  Skipping platforms/ (deployed separately)"
     fi
