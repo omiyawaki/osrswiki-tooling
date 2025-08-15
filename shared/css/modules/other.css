@@ -79,7 +79,7 @@ ol.references li:target {
 
 .collapsed-sec {
     color: var(--heading-color);
-    font-family: 'PT Serif','Palatino','Georgia',serif;
+    font-family: 'Alegreya','Palatino','Georgia',serif;
     font-weight: bold;
     text-shadow: 1px 1px rgba(255,255,255,0.3);
 }
@@ -869,7 +869,7 @@ cite {
 }
 
 .fairycode {
-    font-family: 'PT Serif','Palatino','Georgia',serif;
+    font-family: 'Alegreya','Palatino','Georgia',serif;
     font-size: 120%;
     font-weight: bold;
     letter-spacing: 1px;

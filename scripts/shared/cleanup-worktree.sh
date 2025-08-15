@@ -10,9 +10,10 @@ SESSION_NAME=$(basename "$CURRENT_DIR")
 if [[ "$SESSION_NAME" =~ ^claude-[0-9]{8}-[0-9]{6} ]]; then
     echo "🗑️ Removing worktree session: $SESSION_NAME"
     
-    # Go to parent directory (project root) and remove this worktree
-    cd ..
-    git worktree remove "$SESSION_NAME" --force
+    # Navigate to main repository and remove this worktree
+    MAIN_REPO="/Users/miyawaki/Develop/osrswiki"
+    cd "$MAIN_REPO"
+    git worktree remove "$CURRENT_DIR" --force
     
     echo "✅ Worktree cleanup complete"
     echo "📁 Returned to: $(pwd)"

@@ -772,8 +772,8 @@ table.mw-abuselog-details td, table.mw-abuselog-details th {
 }
 
 .mw-heading, h1, h2, h3, h4, h5, h6 {
-    color: var(--text-color);
-    font-family: 'PT Serif','Palatino','Georgia',serif;
+    color: var(--heading-color);
+    font-family: 'Alegreya', 'Palatino', 'Georgia', serif;
 }
 
 .mwe-popups .mw-ui-icon-element:not(.disabled):hover {
@@ -814,8 +814,8 @@ table.mw-abuselog-details th {
 }
 
 .mw-heading1, .mw-heading2, h1, h2 {
-    color: var(--text-color);
-    font-family: 'PT Serif','Palatino','Georgia',serif;
+    color: var(--heading-color);
+    font-family: 'Alegreya', 'Palatino', 'Georgia', serif;
 }
 
 .mw-rcfilters-ui-changesListWrapperWidget-previousChangesIndicator {

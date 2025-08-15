@@ -5,7 +5,7 @@
  */
 
 .mw-body-content .mw-heading3 {
-    font-family: 'PT Serif', 'Palatino', 'Georgia', serif;
+    font-family: 'Alegreya', 'Palatino', 'Georgia', serif;
 }
 
 ::placeholder {
@@ -17,7 +17,7 @@
 }
 
 .mw-body h1, .mw-body-content .mw-heading6 {
-    font-family: 'PT Serif','Palatino','Georgia',serif;
+    font-family: 'Alegreya','Palatino','Georgia',serif;
 }
 
 .wikitable > * > tr > td.table-noborder {
@@ -34,7 +34,7 @@ table.mw-interwikitable.body td.mw-interwikitable-local-yes {
 
 .mw-body-content h1 {
     border-bottom: 2px solid var(--sidebar);
-    font-family: 'PT Serif','Palatino','Georgia',serif;
+    font-family: 'Alegreya','Palatino','Georgia',serif;
     font-size: 1.8em;
     padding-bottom: 0.2em;
 }
@@ -61,7 +61,7 @@ body td.mw-abusefilter-history-changed {
 }
 
 .mw-body-content h3 {
-    font-family: 'PT Serif','Palatino','Georgia',serif;
+    font-family: 'Alegreya','Palatino','Georgia',serif;
     font-size: 1.3em;
 }
 
@@ -350,7 +350,7 @@ body.page-Old_School_RuneScape_Wiki .mw-parser-output {
 
 .mw-body-content h2 {
     border-bottom: 1px solid var(--sidebar);
-    font-family: 'PT Serif','Palatino','Georgia',serif;
+    font-family: 'Alegreya','Palatino','Georgia',serif;
     font-size: 1.5em;
     padding-bottom: 0.2em;
 }

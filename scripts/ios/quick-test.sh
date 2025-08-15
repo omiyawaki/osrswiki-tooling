@@ -61,8 +61,8 @@ rm -rf build/ DerivedData/ || true
 # Build the iOS app for simulator
 echo "⚙️  Building iOS app..."
 xcodebuild \
-    -project OSRSWiki.xcodeproj \
-    -scheme OSRSWiki \
+    -project "OSRS Wiki.xcodeproj" \
+    -scheme "OSRS Wiki" \
     -configuration Debug \
     -sdk iphonesimulator \
     -destination "id=$IOS_SIMULATOR_UDID" \
@@ -72,14 +72,14 @@ xcodebuild \
 if [[ $? -ne 0 ]]; then
     echo "❌ Build failed!"
     echo "💡 Try opening Xcode and building manually to see detailed errors:"
-    echo "   open platforms/ios/OSRSWiki.xcodeproj"
+    echo "   open 'platforms/ios/OSRS Wiki.xcodeproj'"
     exit 1
 fi
 
 echo "✅ Build successful!"
 
 # Find the built app
-APP_PATH=$(find . -name "OSRSWiki.app" -path "*/Debug-iphonesimulator/*" | head -1)
+APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -name "OSRS Wiki.app" -path "*/Debug-iphonesimulator/*" | head -1)
 if [[ -z "$APP_PATH" ]]; then
     echo "❌ Could not find built app"
     echo "💡 Build may have failed. Check Xcode for errors."

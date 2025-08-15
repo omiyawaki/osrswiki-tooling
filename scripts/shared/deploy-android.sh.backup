@@ -36,22 +36,22 @@ if ! ./scripts/shared/validate-deployment.sh android; then
 fi
 
 # Phase 2: Repository health check
-print_phase "🏥 Phase 2: Repository Health Check"
+echo -e "${BLUE}🏥 Phase 2: Repository Health Check${NC}"
 echo "-------------------------------"
 
-print_info "Checking repository health..."
+echo -e "${YELLOW}Checking repository health...${NC}"
 if ! ./scripts/shared/validate-repository-health.sh; then
-    print_warning " Repository health issues detected"
+    echo -e "${YELLOW}⚠️  Repository health issues detected${NC}"
     echo "Continue anyway? (y/N)"
     read -r response
     if [[ ! "$response" =~ ^[Yy]$ ]]; then
-        print_error "Deployment cancelled by user"
+        echo -e "${RED}Deployment cancelled by user${NC}"
         exit 1
     fi
 fi
 
 # Phase 3: Setup deployment environment
-print_phase "🏗️  Phase 3: Deployment Environment Setup"
+echo -e "${BLUE}🏗️  Phase 3: Deployment Environment Setup${NC}"
 echo "-------------------------------------"
 
 DEPLOY_ANDROID="$HOME/Deploy/osrswiki-android"
@@ -59,7 +59,7 @@ MONOREPO_ROOT="$(pwd)"
 
 # Ensure deployment directory exists
 if [[ ! -d "$DEPLOY_ANDROID" ]]; then
-    print_info "📁 Creating deployment repository..."
+    echo -e "${YELLOW}📁 Creating deployment repository...${NC}"
     mkdir -p "$(dirname "$DEPLOY_ANDROID")"
     cd "$(dirname "$DEPLOY_ANDROID")"
     git clone https://github.com/omiyawaki/osrswiki-android.git
@@ -68,40 +68,40 @@ fi
 
 # Validate deployment repo
 if [[ ! -d "$DEPLOY_ANDROID/.git" ]]; then
-    print_error "Deployment repository is not a valid git repo: $DEPLOY_ANDROID"
+    echo -e "${RED}❌ Deployment repository is not a valid git repo: $DEPLOY_ANDROID${NC}"
     exit 1
 fi
 
-print_success "Deployment environment ready"
+echo -e "${GREEN}✅ Deployment environment ready${NC}"
 
 # Phase 4: Update deployment repository content
-print_phase "📦 Phase 4: Update Deployment Content"
+echo -e "${BLUE}📦 Phase 4: Update Deployment Content${NC}"
 echo "-----------------------------------"
 
 cd "$DEPLOY_ANDROID"
-print_info "Working in deployment repository: $DEPLOY_ANDROID"
+echo -e "${YELLOW}Working in deployment repository: $DEPLOY_ANDROID${NC}"
 
 # Fetch latest changes to ensure we're up to date
-print_info "Fetching latest remote changes..."
+echo -e "${YELLOW}Fetching latest remote changes...${NC}"
 git fetch origin main
 git reset --hard origin/main
 
 # Create deployment branch for safety
 DEPLOY_BRANCH="deploy-$(date +%Y%m%d-%H%M%S)"
-print_info "Creating deployment branch: $DEPLOY_BRANCH"
+echo -e "${YELLOW}Creating deployment branch: $DEPLOY_BRANCH${NC}"
 git checkout -b "$DEPLOY_BRANCH"
 
 # Clear existing content (except .git)
-print_info "Clearing existing content..."
+echo -e "${YELLOW}Clearing existing content...${NC}"
 find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
 
 # Copy Android platform content
-print_info "Copying Android platform content..."
+echo -e "${YELLOW}Copying Android platform content...${NC}"
 cp -r "$MONOREPO_ROOT/platforms/android"/* .
 cp "$MONOREPO_ROOT/platforms/android/.gitignore" . 2>/dev/null || true
 
 # Copy shared resources with proper Android asset structure
-print_info "Copying shared resources to Android asset structure..."
+echo -e "${YELLOW}Copying shared resources to Android asset structure...${NC}"
 ASSETS_DIR="app/src/main/assets"
 
 if [[ -d "$MONOREPO_ROOT/shared" ]]; then
@@ -282,7 +282,7 @@ EOF
         echo "    ✓ Data files copied to data/"
     fi
     
-    print_success "Android asset structure created successfully"
+    echo -e "${GREEN}✅ Android asset structure created successfully${NC}"
     echo "  📁 Assets organized in proper Android structure:"
     echo "    • CSS files → styles/ (main) and styles/modules/ (modules)"
     echo "    • JavaScript → js/ (main) and web/ (WebView-specific)"
@@ -290,31 +290,31 @@ EOF
     echo "    • Assets → root (for direct access)"
     echo "    • Data → data/ (maintaining structure)"
 else
-    print_warning " No shared directory found - creating empty asset structure"
+    echo -e "${YELLOW}⚠️  No shared directory found - creating empty asset structure${NC}"
     mkdir -p "$ASSETS_DIR"
 fi
 
 # Verify dual-mode build configuration  
-print_info "Verifying dual-mode build configuration..."
+echo -e "${YELLOW}Verifying dual-mode build configuration...${NC}"
 if [[ -f "app/build.gradle.kts" ]]; then
     if grep -q "isMonorepo.*File.*exists" app/build.gradle.kts; then
         echo "    ✓ Dual-mode build configuration detected"
         echo "    • Build will auto-detect monorepo vs standalone mode"
         echo "    • No manual configuration changes needed"
     else
-        print_info "    ⚠️  Build file may need dual-mode configuration"
+        echo -e "${YELLOW}    ⚠️  Build file may need dual-mode configuration${NC}"
     fi
-    print_success "Build system ready for standalone deployment"
+    echo -e "${GREEN}✅ Build system ready for standalone deployment${NC}"
 else
-    print_error "build.gradle.kts not found in expected location"
+    echo -e "${RED}❌ build.gradle.kts not found in expected location${NC}"
     ls -la app/build.gradle* 2>/dev/null || echo "    No build.gradle files found"
 fi
 
 # Phase 5: Deployment Validation
-print_phase "✅ Phase 5: Deployment Validation"
+echo -e "${BLUE}✅ Phase 5: Deployment Validation${NC}"
 echo "------------------------------"
 
-print_info "Running deployment validation checks..."
+echo -e "${YELLOW}Running deployment validation checks...${NC}"
 
 # Validation 1: Asset structure and content
 echo "  → Validating asset structure..."
@@ -362,7 +362,7 @@ if [[ -f "app/build.gradle.kts" ]]; then
     if grep -q "isMonorepo.*File.*exists" app/build.gradle.kts; then
         echo "    ✓ Dual-mode build configuration present"
     else
-        print_info "    ⚠️  Dual-mode configuration not found"
+        echo -e "${YELLOW}    ⚠️  Dual-mode configuration not found${NC}"
         VALIDATION_PASSED=false
     fi
     
@@ -371,11 +371,11 @@ if [[ -f "app/build.gradle.kts" ]]; then
         if grep -q "val isMonorepo" app/build.gradle.kts; then
             echo "    ✓ Monorepo references properly conditionalized"
         else
-            print_info "    ⚠️  Unconditionalized monorepo references detected"
+            echo -e "${YELLOW}    ⚠️  Unconditionalized monorepo references detected${NC}"
         fi
     fi
 else
-    print_error "    build.gradle.kts not found"
+    echo -e "${RED}    ❌ build.gradle.kts not found${NC}"
     VALIDATION_PASSED=false
 fi
 
@@ -385,39 +385,39 @@ if [[ -f "./gradlew" ]]; then
     if timeout 30 ./gradlew --version >/dev/null 2>&1; then
         echo "    ✓ Gradle wrapper functional"
     else
-        print_info "    ⚠️  Gradle wrapper test timed out or failed"
+        echo -e "${YELLOW}    ⚠️  Gradle wrapper test timed out or failed${NC}"
         # This is a warning, not a failure
     fi
 else
-    print_error "    gradlew not found"
+    echo -e "${RED}    ❌ gradlew not found${NC}"
     VALIDATION_PASSED=false
 fi
 
 # Validation summary
 echo ""
 if [[ "$VALIDATION_PASSED" == "true" ]]; then
-    print_success "All deployment validation checks passed"
-    print_info "📋 Deployment Summary:"
+    echo -e "${GREEN}✅ All deployment validation checks passed${NC}"
+    echo -e "${CYAN}📋 Deployment Summary:${NC}"
     echo "  • Asset directories: $(find "$ASSETS_DIR" -type d | wc -l)"
     echo "  • Asset files: $(find "$ASSETS_DIR" -type f | wc -l)"
     echo "  • Total asset size: $(du -sh "$ASSETS_DIR" | cut -f1)"
     echo "  • Build configuration: Dual-mode enabled"
     echo "  • Validation: All checks passed"
 else
-    print_error "Deployment validation failed"
+    echo -e "${RED}❌ Deployment validation failed${NC}"
     echo "The deployed app may not build correctly in standalone mode."
     echo "Please review the errors above and fix them before proceeding."
     echo ""
     echo "To run full standalone validation after fixing issues:"
     echo "  \$MONOREPO_ROOT/scripts/shared/test-standalone-build.sh"
     echo ""
-    print_info "Continue with deployment anyway? (y/N)"
+    echo -e "${YELLOW}Continue with deployment anyway? (y/N)${NC}"
     read -r response
     if [[ ! "$response" =~ ^[Yy]$ ]]; then
-        print_error "Deployment cancelled by user"
+        echo -e "${RED}Deployment cancelled by user${NC}"
         exit 1
     fi
-    print_warning " Proceeding with deployment despite validation warnings"
+    echo -e "${YELLOW}⚠️  Proceeding with deployment despite validation warnings${NC}"
 fi
 
 # Stage all changes
@@ -452,14 +452,14 @@ Deployment info:
 - Asset files: $(find "$MONOREPO_ROOT/shared" -type f 2>/dev/null | wc -l)"
 
     git commit -m "$DEPLOY_COMMIT_MSG"
-    print_success "Deployment commit created"
+    echo -e "${GREEN}✅ Deployment commit created${NC}"
     
     # Show what was deployed
-    print_phase "📋 Deployment Summary:"
+    echo -e "${BLUE}📋 Deployment Summary:${NC}"
     git show --stat HEAD
     
 else
-    print_info "ℹ️  No changes to deploy"
+    echo -e "${YELLOW}ℹ️  No changes to deploy${NC}"
     git checkout main
     git branch -d "$DEPLOY_BRANCH"
     cd "$MONOREPO_ROOT"
@@ -467,24 +467,24 @@ else
 fi
 
 # Phase 5: Push to remote
-print_phase "🚀 Phase 5: Push to Remote"
+echo -e "${BLUE}🚀 Phase 5: Push to Remote${NC}"
 echo "------------------------"
 
 # Safety check - ensure we have reasonable number of commits
 DEPLOY_COMMITS=$(git rev-list --count HEAD)
 if [[ "$DEPLOY_COMMITS" -lt 1 ]]; then
-    print_error "🚨 CRITICAL SAFETY CHECK FAILED"
+    echo -e "${RED}🚨 CRITICAL SAFETY CHECK FAILED${NC}"
     echo "Deployment repository has no commits"
     echo "This suggests a serious error in deployment preparation."
     exit 1
 fi
 
-print_success "Safety check passed: $DEPLOY_COMMITS commits"
+echo -e "${GREEN}✅ Safety check passed: $DEPLOY_COMMITS commits${NC}"
 
 # Push with force-with-lease for safety
-print_info "Pushing to remote..."
+echo -e "${YELLOW}Pushing to remote...${NC}"
 if git push origin "$DEPLOY_BRANCH" --force-with-lease; then
-    print_success "Deployment branch pushed successfully"
+    echo -e "${GREEN}✅ Deployment branch pushed successfully${NC}"
     
     # Merge to main
     git checkout main
@@ -495,16 +495,16 @@ if git push origin "$DEPLOY_BRANCH" --force-with-lease; then
     git branch -d "$DEPLOY_BRANCH"
     git push origin --delete "$DEPLOY_BRANCH"
     
-    print_success "🎉 Android deployment completed successfully!"
+    echo -e "${GREEN}🎉 Android deployment completed successfully!${NC}"
     
 else
-    print_error "Push failed - remote may have been updated"
+    echo -e "${RED}❌ Push failed - remote may have been updated${NC}"
     echo "Fix conflicts and try again"
     exit 1
 fi
 
 # Phase 6: Final validation
-print_phase "✅ Phase 6: Post-deployment Validation"
+echo -e "${BLUE}✅ Phase 6: Post-deployment Validation${NC}"
 echo "--------------------------------"
 
 # Verify remote state
@@ -512,9 +512,9 @@ REMOTE_COMMITS=$(git ls-remote origin main | cut -f1)
 LOCAL_COMMITS=$(git rev-parse HEAD)
 
 if [[ "$REMOTE_COMMITS" == "$LOCAL_COMMITS" ]]; then
-    print_success "Remote and local are synchronized"
+    echo -e "${GREEN}✅ Remote and local are synchronized${NC}"
 else
-    print_warning " Remote and local commits differ"
+    echo -e "${YELLOW}⚠️  Remote and local commits differ${NC}"
     echo "This may indicate a deployment issue - investigate"
 fi
 
@@ -522,13 +522,13 @@ fi
 cd "$MONOREPO_ROOT"
 
 echo ""
-print_success "🎊 Git-Based Android Deployment Complete!"
+echo -e "${GREEN}🎊 Git-Based Android Deployment Complete!${NC}"
 echo "=============================================="
 echo "Deployment repository: $DEPLOY_ANDROID"
 echo "Remote commits: $DEPLOY_COMMITS"
 echo "Changes deployed safely"
 echo ""
-print_phase "Deployed components:"
+echo -e "${BLUE}Deployed components:${NC}"
 echo "- ✅ Android app (complete Kotlin/Gradle project)"
 echo "- ✅ Web assets organized in proper Android structure" 
 echo "- ✅ CSS stylesheets in styles/ directory"
@@ -539,13 +539,13 @@ echo "- ✅ Dual-mode build configuration (monorepo/standalone)"
 echo "- ✅ Deployment validation and integrity checks"
 echo "- ✅ Standalone buildable without monorepo dependencies"
 echo ""
-print_phase "Key advantages of ~/Deploy approach:"
+echo -e "${BLUE}Key advantages of ~/Deploy approach:${NC}"
 echo "- ✅ Simple 1:1 mirror of remote repository"
 echo "- ✅ Standard git workflow from deployment directory"
 echo "- ✅ Clear separation between monorepo and deployment"
 echo "- ✅ Easy to verify deployment state"
 echo ""
-print_phase "Next steps:"
+echo -e "${BLUE}Next steps:${NC}"
 echo "- Verify deployment at: https://github.com/omiyawaki/osrswiki-android"
 echo "- Run full standalone validation: ./scripts/shared/test-standalone-build.sh"
 echo "- Test the deployed app builds and runs correctly"
