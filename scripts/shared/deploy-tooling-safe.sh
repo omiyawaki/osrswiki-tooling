@@ -145,10 +145,20 @@ echo -e "${YELLOW}Copying tooling content...${NC}"
 echo -e "${YELLOW}Performing complete repository replacement...${NC}"
 find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
 
+# Verify clean slate
+REMAINING_FILES=$(find . -mindepth 1 -maxdepth 1 ! -name '.git' | wc -l)
+if [[ "$REMAINING_FILES" -gt 0 ]]; then
+    echo -e "${RED}❌ Failed to clean repository completely${NC}"
+    find . -mindepth 1 -maxdepth 1 ! -name '.git'
+    exit 1
+fi
+
 # Copy staged content to deployment repo with proper structure preservation
 echo -e "${YELLOW}Copying monorepo structure (excluding platforms/)...${NC}"
-cp -r "$TEMP_STAGING"/* . 2>/dev/null || true
-cp -r "$TEMP_STAGING"/.[^.]* . 2>/dev/null || true
+# Use tar to preserve exact structure
+cd "$TEMP_STAGING"
+tar cf - . | (cd "$DEPLOY_TOOLING" && tar xf -)
+cd "$DEPLOY_TOOLING"
 
 # Verify structure
 echo -e "${YELLOW}Verifying deployment structure...${NC}"
