@@ -191,12 +191,12 @@ fi
 echo -e "${BLUE}⬆️  Phase 7: Remote Push${NC}"
 echo "-------------------"
 
-# Final safety check - commit count validation
+# Final safety check - commit count validation (tooling repo has fewer commits than platform repos)
 DEPLOY_COMMITS=$(git rev-list --count HEAD)
-if [[ "$DEPLOY_COMMITS" -lt 50 ]]; then
+if [[ "$DEPLOY_COMMITS" -lt 5 ]]; then
     echo -e "${RED}🚨 CRITICAL SAFETY CHECK FAILED${NC}"
     echo "Deployment repository has only $DEPLOY_COMMITS commits"
-    echo "Expected: 50+ commits for tooling repository"
+    echo "Expected: 5+ commits for tooling repository"
     echo ""
     echo "This suggests a serious error in deployment preparation."
     echo "DO NOT PROCEED - investigate immediately."
