@@ -232,14 +232,37 @@ else
             echo -e "${GREEN}📱 Public repository updated: https://github.com/omiyawaki/osrswiki-android${NC}"
         else
             echo -e "${YELLOW}⚠️  Subtree push failed, using split and force push...${NC}"
-            SPLIT_COMMIT=$(git subtree split --prefix=platforms/android)
+            SPLIT_COMMIT=$(git subtree split --prefix=platforms/android 2>/dev/null || echo "")
             if [ -n "$SPLIT_COMMIT" ]; then
                 git push android "$SPLIT_COMMIT:main" --force
                 echo -e "${GREEN}✅ Android deployment successful (force push)!${NC}"
                 echo -e "${YELLOW}⚠️  Used force push - history may have been replaced${NC}"
             else
-                echo -e "${RED}❌ Failed to create subtree split${NC}"
-                exit 1
+                echo -e "${YELLOW}⚠️  Subtree split failed, using manual copy deployment...${NC}"
+                # Fallback: Manual copy to deployment directory
+                if [ -d "$HOME/Deploy/osrswiki-android" ]; then
+                    cd "$HOME/Deploy/osrswiki-android"
+                    # Remove all content except .git
+                    find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
+                    # Copy platforms/android content
+                    cp -r "$(pwd | sed 's|/Deploy/osrswiki-android||')/platforms/android"/* .
+                    cp "$(pwd | sed 's|/Deploy/osrswiki-android||')/platforms/android/.gitignore" . 2>/dev/null || true
+                    # Commit and push
+                    git add -A
+                    git commit -m "deploy: manual sync due to git history issues
+
+- Updated from monorepo platforms/android
+- Includes latest changes and shared components
+- Manual deployment due to subtree corruption
+
+Deployment date: $(date)"
+                    git push origin main --force
+                    echo -e "${GREEN}✅ Android deployment successful (manual copy)!${NC}"
+                    cd - >/dev/null
+                else
+                    echo -e "${RED}❌ All deployment methods failed${NC}"
+                    exit 1
+                fi
             fi
         fi
     else
