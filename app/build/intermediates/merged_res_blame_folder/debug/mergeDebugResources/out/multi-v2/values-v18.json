@@ -1,0 +1,19 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.omiyawaki.osrswiki.app-mergeDebugResources-65:/values-v18/values-v18.xml",
+            "map": [
+                {
+                    "source": "/Users/miyawaki/.gradle/caches/9.0.0/transforms/2871963c19c8a6f085b485c2b9c3920f/transformed/appcompat-1.7.0/res/values-v18/values-v18.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "48",
+                        "endOffsets": "99"
+                    }
+                }
+            ]
+        }
+    ]
+}

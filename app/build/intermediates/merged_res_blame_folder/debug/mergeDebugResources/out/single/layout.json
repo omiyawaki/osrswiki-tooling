@@ -1,0 +1,262 @@
+[
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/fragment_recent_searches.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/fragment_recent_searches.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/view_unified_toolbar.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/view_unified_toolbar.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/item_theme_preview_card.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/item_theme_preview_card.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/fragment_donate.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/fragment_donate.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/find_in_page_view.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/find_in_page_view.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/activity_about.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/activity_about.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/item_news_card_updates.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/item_news_card_updates.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/item_news_card_announcements.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/item_news_card_announcements.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/fragment_search.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/fragment_search.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/fragment_history.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/fragment_history.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/view_tab_header_with_search.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/view_tab_header_with_search.xml"
+    },
+    {
+        "merged": "com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/activity_main.xml",
+        "source": "com.omiyawaki.osrswiki.app-main-69:/layout/activity_main.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/activity_request_feature.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/activity_request_feature.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/activity_offline_settings.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/activity_offline_settings.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/item_setting_switch.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/item_setting_switch.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/fragment_more.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/fragment_more.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/activity_main.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/activity_main.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/item_history_entry.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/item_history_entry.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/item_table_preview_card.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/item_table_preview_card.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/item_search_result.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/item_search_result.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/fragment_feedback.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/fragment_feedback.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/view_search_action_provider.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/view_search_action_provider.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/dialog_feedback_form.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/dialog_feedback_form.xml"
+    },
+    {
+        "merged": "com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/view_custom_bottom_nav_bar.xml",
+        "source": "com.omiyawaki.osrswiki.app-main-69:/layout/view_custom_bottom_nav_bar.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/fragment_news.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/fragment_news.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/dialog_osrs_theme_chooser.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/dialog_osrs_theme_chooser.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/activity_report_issue.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/activity_report_issue.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/fragment_search_results.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/fragment_search_results.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/item_recent_search.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/item_recent_search.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/item_setting_list.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/item_setting_list.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/activity_search.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/activity_search.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/item_history_entry_rich.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/item_history_entry_rich.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/fragment_settings_categories.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/fragment_settings_categories.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/fragment_page.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/fragment_page.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/item_news_card_on_this_day.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/item_news_card_on_this_day.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/activity_settings.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/activity_settings.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/item_theme_preview_card_horizontal.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/item_theme_preview_card_horizontal.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/item_settings_category.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/item_settings_category.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/activity_settings_categories.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/activity_settings_categories.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/item_setting_inline_table.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/item_setting_inline_table.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/item_inline_selection_card.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/item_inline_selection_card.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/fragment_map.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/fragment_map.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/activity_page.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/activity_page.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/item_saved_page.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/item_saved_page.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/item_news_update.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/item_news_update.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/fragment_main.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/fragment_main.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/theme_preview_host.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/theme_preview_host.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/view_themed_loading_indicator.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/view_themed_loading_indicator.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/view_history_date_header.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/view_history_date_header.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/item_news_card_popular.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/item_news_card_popular.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/view_page_action_bar.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/view_page_action_bar.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/fragment_saved_pages.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/fragment_saved_pages.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/fragment_custom_settings.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/fragment_custom_settings.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/view_main_feed_search.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/view_main_feed_search.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/view_history_search_card.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/view_history_search_card.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/activity_saved_pages_search.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/activity_saved_pages_search.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/item_inline_selection_card_horizontal.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/item_inline_selection_card_horizontal.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/activity_feedback.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/activity_feedback.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/activity_appearance_settings.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/activity_appearance_settings.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/toc_item.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/toc_item.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/item_more.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/item_more.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/activity_donate.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/activity_donate.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/fragment_about.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/fragment_about.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/item_setting_inline_theme.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/item_setting_inline_theme.xml"
+    },
+    {
+        "merged": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-mergeDebugResources-66:/layout/item_setting_category.xml",
+        "source": "/Users/miyawaki/.gradle/daemon/9.0.0/com.omiyawaki.osrswiki.app-main-69:/layout/item_setting_category.xml"
+    }
+]
