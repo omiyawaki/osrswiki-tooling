@@ -46,6 +46,97 @@ log_warning() {
     echo -e "${YELLOW}WARNING: $*${NC}"
 }
 
+# Function to get directory size in GB
+get_size_gb() {
+    local dir="$1"
+    if [[ -d "$dir" ]]; then
+        du -s "$dir" 2>/dev/null | awk '{printf "%.2f", $1/1024/1024}'
+    else
+        echo "0"
+    fi
+}
+
+# Function to cleanup empty or failed backups
+cleanup_failed_backups() {
+    local cleaned=0
+    
+    log "Checking for empty or failed backups..."
+    
+    if [[ -d "$BACKUP_BASE_DIR" ]]; then
+        while IFS= read -r -d '' backup_dir; do
+            local backup_name=$(basename "$backup_dir")
+            local backup_size=$(du -s "$backup_dir" 2>/dev/null | awk '{print $1}')
+            
+            # Remove if backup is empty (less than 1MB = 1024 KB)
+            if [[ $backup_size -lt 1024 ]]; then
+                log "Removing empty/failed backup: $backup_name"
+                rm -rf "$backup_dir"
+                ((cleaned++))
+            fi
+        done < <(find "$BACKUP_BASE_DIR" -type d -name "*-auto-*" -o -name "*deploy-*" -o -name "*emergency-*" -print0 2>/dev/null)
+        
+        # Also remove empty tar.gz files
+        while IFS= read -r -d '' tar_file; do
+            local file_size=$(stat -f%z "$tar_file" 2>/dev/null || echo "0")
+            if [[ $file_size -lt 1048576 ]]; then  # Less than 1MB
+                log "Removing empty archive: $(basename "$tar_file")"
+                rm -f "$tar_file"
+                ((cleaned++))
+            fi
+        done < <(find "$BACKUP_BASE_DIR" -name "*.tar.gz" -print0 2>/dev/null)
+    fi
+    
+    if [[ $cleaned -gt 0 ]]; then
+        log_success "Cleaned up $cleaned empty/failed backups"
+    fi
+}
+
+# Function to enforce size-based cleanup
+enforce_size_limit() {
+    local current_size_gb=$(get_size_gb "$BACKUP_BASE_DIR")
+    local cleaned=0
+    
+    log "Current backup directory size: ${current_size_gb}GB (limit: ${MAX_BACKUP_SIZE_GB}GB)"
+    
+    if (( $(echo "$current_size_gb > $MAX_BACKUP_SIZE_GB" | bc -l) )); then
+        log_warning "Backup directory exceeds size limit, starting size-based cleanup..."
+        
+        # Get all backup directories sorted by modification time (oldest first)
+        local backup_dirs=()
+        while IFS= read -r -d '' backup_dir; do
+            backup_dirs+=("$backup_dir")
+        done < <(find "$BACKUP_BASE_DIR" -maxdepth 1 -type d \( -name "*-auto-*" -o -name "*deploy-*" -o -name "*emergency-*" \) -print0 2>/dev/null | xargs -0 ls -1dt | tac)
+        
+        # Remove oldest backups until under limit
+        for backup_dir in "${backup_dirs[@]}"; do
+            current_size_gb=$(get_size_gb "$BACKUP_BASE_DIR")
+            if (( $(echo "$current_size_gb <= $MAX_BACKUP_SIZE_GB" | bc -l) )); then
+                break
+            fi
+            
+            local backup_name=$(basename "$backup_dir")
+            local backup_size_gb=$(get_size_gb "$backup_dir")
+            
+            log "Removing old backup for size limit: $backup_name (${backup_size_gb}GB)"
+            rm -rf "$backup_dir"
+            
+            # Also remove associated tar.gz file
+            local tar_file="${backup_dir}.tar.gz"
+            if [[ -f "$tar_file" ]]; then
+                rm -f "$tar_file"
+                log "Removed associated archive: $(basename "$tar_file")"
+            fi
+            
+            ((cleaned++))
+        done
+        
+        current_size_gb=$(get_size_gb "$BACKUP_BASE_DIR")
+        log_success "Size-based cleanup completed: removed $cleaned backups, new size: ${current_size_gb}GB"
+    else
+        log "Backup directory size within limit"
+    fi
+}
+
 # Start backup process
 log "====================================="
 log "OSRS Wiki Daily Backup Started"
