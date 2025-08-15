@@ -223,7 +223,8 @@ if [[ ${#BACKUPS_TO_CLEAN[@]} -gt 0 ]]; then
         
         ((CLEANED_OLD++))
     fi
-done
+    done
+fi
 
 echo "Cleaned old backups: $CLEANED_OLD"
 echo ""
