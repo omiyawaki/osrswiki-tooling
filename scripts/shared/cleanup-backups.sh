@@ -209,7 +209,8 @@ if [[ "$PRESERVE_EMERGENCY" == false ]]; then
 fi
 
 # Remove old backups
-for backup_dir in "${BACKUPS_TO_CLEAN[@]}"; do
+if [[ ${#BACKUPS_TO_CLEAN[@]} -gt 0 ]]; then
+    for backup_dir in "${BACKUPS_TO_CLEAN[@]}"; do
     if [[ -d "$backup_dir" ]]; then
         backup_age_days=$(echo "($(date +%s) - $(stat -f%m "$backup_dir")) / 86400" | bc)
         safe_remove "$backup_dir" "Old backup: $(basename "$backup_dir") (${backup_age_days} days old)"
