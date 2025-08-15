@@ -45,30 +45,20 @@ Claude handles session setup directly with intelligent platform detection and en
 
 ## Required Actions
 
-**IMPORTANT: Claude will delegate session setup to the orchestrator agent, which will handle all complexity analysis and worker spawning automatically.**
+**Claude will handle session setup directly based on your task description.**
 
-### Automatic Agent Workflow
+### Session Setup Workflow
 
 1. **Ask user for task description**:
    Stop and ask the user: "Please describe what you'd like to work on in this session."
    Wait for their response.
 
-2. **Spawn Orchestrator Agent**:
-   Once the user provides their task description, Claude automatically spawns the orchestrator:
-   ```bash
-   Task tool with:
-   - description: "Initialize development session and analyze task complexity"
-   - prompt: "Set up development session for: [user task description]. Analyze complexity, detect platform, set up session infrastructure, and spawn appropriate workers (single worker for simple tasks, multiple workers for complex tasks with parallel development)."
-   - subagent_type: "orchestrator"
-   ```
-
-### What the Orchestrator Does
-
-The orchestrator will automatically handle all remaining setup:
-- **Platform Detection**: Android, iOS, or cross-platform based on task description
-- **Complexity Analysis**: Determine if task is simple (1 worker) or complex (multiple workers)
-- **Session Setup**: Create worktree, environment, branch, and initial commit
-- **Worker Strategy**: Spawn appropriate number of workers for optimal parallel development
+2. **Direct Session Setup**:
+   Claude will directly handle all session setup:
+   - **Platform Detection**: Android, iOS, or cross-platform based on task description
+   - **Session Creation**: Create worktree, environment, branch, and initial commit
+   - **Environment Setup**: Configure platform-specific devices/simulators
+   - **Development Readiness**: Prepare workspace for immediate development
 
 ### Worker Spawning Examples
 
