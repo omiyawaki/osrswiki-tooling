@@ -16,6 +16,8 @@ BACKUP_TYPE="daily-auto"
 LOG_FILE="$HOME/Backups/osrswiki/daily-backup.log"
 MAX_BACKUP_AGE_DAYS=30
 MAX_LOG_LINES=1000
+MAX_BACKUP_SIZE_GB=10  # Maximum total backup directory size in GB
+BACKUP_BASE_DIR="$HOME/Backups/osrswiki"
 
 # Ensure log directory exists
 mkdir -p "$(dirname "$LOG_FILE")"
