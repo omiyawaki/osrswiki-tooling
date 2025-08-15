@@ -94,11 +94,16 @@ mkdir -p "$TEMP_STAGING"
 
 echo -e "${YELLOW}Copying tooling components to staging area...${NC}"
 
-# Copy all directories except platforms/
+# Copy all directories except platforms/, handling symlinks properly
 for dir in */; do
     if [[ "$dir" != "platforms/" ]]; then
-        echo "  → Copying $dir"
-        cp -r "$dir" "$TEMP_STAGING/"
+        # Skip symlinks that might cause cycles
+        if [[ -L "$dir" ]]; then
+            echo "  ⏭️  Skipping symlink: $dir"
+        else
+            echo "  → Copying $dir"
+            cp -r "$dir" "$TEMP_STAGING/"
+        fi
     else
         echo "  ⏭️  Skipping platforms/ (deployed separately)"
     fi
