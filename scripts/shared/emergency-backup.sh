@@ -73,7 +73,7 @@ EOF
 echo -e "${BLUE}🔄 Phase 1: Main Monorepo Backup${NC}"
 echo "-------------------------------"
 
-MONOREPO_PATH="/Users/miyawaki/Developer/osrswiki"
+MONOREPO_PATH="/Users/miyawaki/Develop/osrswiki"
 backup_repository "$MONOREPO_PATH" "Main Monorepo" "monorepo-main"
 
 # Also backup from current location if we're somewhere else
