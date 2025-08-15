@@ -139,12 +139,26 @@ git checkout -b "$DEPLOY_BRANCH" origin/main
 # Copy tooling content to deployment repo
 echo -e "${YELLOW}Copying tooling content...${NC}"
 
-# Remove all content except .git
+# COMPLETE REPLACEMENT: Remove all content except .git
+echo -e "${YELLOW}Performing complete repository replacement...${NC}"
 find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
 
-# Copy staged content to deployment repo
-cp -r "$TEMP_STAGING"/* .
+# Copy staged content to deployment repo with proper structure preservation
+echo -e "${YELLOW}Copying monorepo structure (excluding platforms/)...${NC}"
+cp -r "$TEMP_STAGING"/* . 2>/dev/null || true
 cp -r "$TEMP_STAGING"/.[^.]* . 2>/dev/null || true
+
+# Verify structure
+echo -e "${YELLOW}Verifying deployment structure...${NC}"
+if [[ -d "tools" && -d "scripts" && -d "shared" && ! -d "platforms" ]]; then
+    echo -e "${GREEN}✅ Repository structure verified: monorepo layout preserved${NC}"
+else
+    echo -e "${RED}❌ Repository structure incorrect${NC}"
+    echo "Expected directories: tools/, scripts/, shared/"
+    echo "Should NOT have: platforms/"
+    echo "Current structure:"
+    ls -la | head -10
+fi
 
 # Clean up staging area
 rm -rf "$TEMP_STAGING"
