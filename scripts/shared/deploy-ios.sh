@@ -160,7 +160,7 @@ cp "$GIT_ROOT/platforms/ios/.gitignore" . 2>/dev/null || true
 
 # Create iOS-specific shared component bridge if shared components exist
 print_info "Creating shared components bridge..."
-IOS_SHARED_DIR="OSRSWiki/Shared"
+IOS_SHARED_DIR="osrswiki/Shared"
 
 if [[ -d "$MONOREPO_ROOT/shared" ]]; then
     mkdir -p "$IOS_SHARED_DIR"
@@ -169,7 +169,7 @@ if [[ -d "$MONOREPO_ROOT/shared" ]]; then
     cat > "$IOS_SHARED_DIR/SharedComponentsBridge.swift" << 'EOF'
 //
 //  SharedComponentsBridge.swift
-//  OSRSWiki
+//  osrswiki
 //
 //  Auto-generated shared components bridge
 //  This file bridges shared components for iOS use

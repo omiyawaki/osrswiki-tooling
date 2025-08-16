@@ -20,12 +20,12 @@ fi
 IOS_PROJECT_DIR=""
 
 # Check if we're in the iOS project directory
-if [[ -f "OSRSWiki.xcodeproj/project.pbxproj" ]]; then
+if [[ -f "osrswiki.xcodeproj/project.pbxproj" ]]; then
     IOS_PROJECT_DIR="."
-elif [[ -f "platforms/ios/OSRSWiki.xcodeproj/project.pbxproj" ]]; then
+elif [[ -f "platforms/ios/osrswiki.xcodeproj/project.pbxproj" ]]; then
     IOS_PROJECT_DIR="platforms/ios"
 else
-    echo "❌ Could not find OSRSWiki.xcodeproj" >&2
+    echo "❌ Could not find osrswiki.xcodeproj" >&2
     echo "💡 Run this script from project root or iOS project directory" >&2
     exit 1
 fi
@@ -34,15 +34,15 @@ fi
 cd "$IOS_PROJECT_DIR"
 
 # Method 1: Try to extract from xcodebuild project settings
-BUNDLE_ID=$(xcodebuild -project OSRSWiki.xcodeproj -target OSRSWiki -showBuildSettings 2>/dev/null | \
-    grep "PRODUCT_BUNDLE_IDENTIFIER" | \
+BUNDLE_ID=$(xcodebuild -project osrswiki.xcodeproj -target osrswiki -showBuildSettings 2>/dev/null | \
+    grep "^ *PRODUCT_BUNDLE_IDENTIFIER = " | \
     head -1 | \
     sed 's/.*= //' | \
     tr -d ' ' || echo "")
 
 # Method 2: If that fails, try to extract from project.pbxproj directly
 if [[ -z "$BUNDLE_ID" ]]; then
-    BUNDLE_ID=$(grep -E "PRODUCT_BUNDLE_IDENTIFIER.*=" OSRSWiki.xcodeproj/project.pbxproj | \
+    BUNDLE_ID=$(grep -E "PRODUCT_BUNDLE_IDENTIFIER.*=" osrswiki.xcodeproj/project.pbxproj | \
         head -1 | \
         sed 's/.*= //' | \
         sed 's/;//' | \
@@ -51,8 +51,8 @@ fi
 
 # Method 3: If still empty, try Info.plist (though it usually contains variables)
 if [[ -z "$BUNDLE_ID" ]]; then
-    if [[ -f "OSRSWiki/OSRSWiki-Info.plist" ]]; then
-        BUNDLE_ID=$(defaults read "$(pwd)/OSRSWiki/OSRSWiki-Info.plist" CFBundleIdentifier 2>/dev/null || echo "")
+    if [[ -f "osrswiki/osrswiki-Info.plist" ]]; then
+        BUNDLE_ID=$(defaults read "$(pwd)/osrswiki/osrswiki-Info.plist" CFBundleIdentifier 2>/dev/null || echo "")
     fi
 fi
 
