@@ -81,7 +81,8 @@ if command -v avdmanager >/dev/null 2>&1; then
     
     # Count truly orphaned emulators
     TRULY_ORPHANED=0
-    for emulator in "${ORPHANED_EMULATORS[@]}"; do
+    if [[ ${#ORPHANED_EMULATORS[@]} -gt 0 ]]; then
+        for emulator in "${ORPHANED_EMULATORS[@]}"; do
         session_name="${emulator#test-}"
         is_orphaned=true
         for active_session in "${ACTIVE_SESSIONS[@]}"; do
@@ -93,7 +94,8 @@ if command -v avdmanager >/dev/null 2>&1; then
         if [[ "$is_orphaned" == "true" ]]; then
             ((TRULY_ORPHANED++))
         fi
-    done
+        done
+    fi
     
     if [[ $TRULY_ORPHANED -gt 0 ]]; then
         echo "⚠️  Found $TRULY_ORPHANED orphaned emulators from previous sessions"
@@ -259,7 +261,7 @@ done
 
 echo "Device ready: $ANDROID_SERIAL"
 echo "To use this device, run: export ANDROID_SERIAL=$ANDROID_SERIAL"
-echo "To clean up, run: ./cleanup-session-device.sh $EMULATOR_NAME $ANDROID_SERIAL"
+echo "To clean up, run: ./scripts/shared/cleanup-session-device.sh $EMULATOR_NAME $ANDROID_SERIAL"
 
 # Save session info for cleanup
 echo "$EMULATOR_NAME:$ANDROID_SERIAL" > .claude-session-device

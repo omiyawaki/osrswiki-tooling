@@ -85,12 +85,14 @@ for emulator in "${SESSION_EMULATORS[@]}"; do
     
     # Check if corresponding worktree session exists
     is_orphaned=true
-    for active_session in "${ACTIVE_SESSIONS[@]}"; do
-        if [[ "$session_name" == "$active_session" ]]; then
-            is_orphaned=false
-            break
-        fi
-    done
+    if [[ ${#ACTIVE_SESSIONS[@]} -gt 0 ]]; then
+        for active_session in "${ACTIVE_SESSIONS[@]}"; do
+            if [[ "$session_name" == "$active_session" ]]; then
+                is_orphaned=false
+                break
+            fi
+        done
+    fi
     
     if [[ "$is_orphaned" == "true" ]]; then
         ORPHANED_EMULATORS+=("$emulator")
@@ -100,9 +102,11 @@ for emulator in "${SESSION_EMULATORS[@]}"; do
 done
 
 echo -e "${GREEN}🛡️  Protected emulators (active sessions): ${#PROTECTED_EMULATORS[@]}${NC}"
-for emulator in "${PROTECTED_EMULATORS[@]}"; do
-    echo "   • $emulator (session active)"
-done
+if [[ ${#PROTECTED_EMULATORS[@]} -gt 0 ]]; then
+    for emulator in "${PROTECTED_EMULATORS[@]}"; do
+        echo "   • $emulator (session active)"
+    done
+fi
 
 echo ""
 echo -e "${YELLOW}🗑️  Orphaned emulators to remove: ${#ORPHANED_EMULATORS[@]}${NC}"
@@ -222,9 +226,11 @@ done
 echo ""
 echo -e "${BLUE}📊 Cleanup Results:${NC}"
 echo -e "${GREEN}✅ Successfully removed: ${#CLEANUP_SUCCESS[@]} emulators${NC}"
-for emulator in "${CLEANUP_SUCCESS[@]}"; do
-    echo "   • $emulator"
-done
+if [[ ${#CLEANUP_SUCCESS[@]} -gt 0 ]]; then
+    for emulator in "${CLEANUP_SUCCESS[@]}"; do
+        echo "   • $emulator"
+    done
+fi
 
 if [[ ${#CLEANUP_ERRORS[@]} -gt 0 ]]; then
     echo ""

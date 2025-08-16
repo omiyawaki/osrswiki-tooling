@@ -82,19 +82,23 @@ if command -v avdmanager >/dev/null 2>&1; then
     
     # Count truly orphaned emulators
     TRULY_ORPHANED=0
-    for emulator in "${ORPHANED_EMULATORS[@]}"; do
-        session_name="${emulator#test-}"
-        is_orphaned=true
-        for active_session in "${ACTIVE_SESSIONS[@]}"; do
-            if [[ "$session_name" == "$active_session" ]]; then
-                is_orphaned=false
-                break
+    if [[ ${#ORPHANED_EMULATORS[@]} -gt 0 ]]; then
+        for emulator in "${ORPHANED_EMULATORS[@]}"; do
+            session_name="${emulator#test-}"
+            is_orphaned=true
+            if [[ ${#ACTIVE_SESSIONS[@]} -gt 0 ]]; then
+                for active_session in "${ACTIVE_SESSIONS[@]}"; do
+                    if [[ "$session_name" == "$active_session" ]]; then
+                        is_orphaned=false
+                        break
+                    fi
+                done
+            fi
+            if [[ "$is_orphaned" == "true" ]]; then
+                ((TRULY_ORPHANED++))
             fi
         done
-        if [[ "$is_orphaned" == "true" ]]; then
-            ((TRULY_ORPHANED++))
-        fi
-    done
+    fi
     
     if [[ $TRULY_ORPHANED -gt 0 ]]; then
         echo -e "${YELLOW}   ⚠️  Found $TRULY_ORPHANED orphaned emulators system-wide${NC}"

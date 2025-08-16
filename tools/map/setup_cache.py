@@ -48,7 +48,7 @@ def main():
     # Use centralized cache directory
     import os
     home_dir = os.path.expanduser('~')
-    cache_base = os.path.join(home_dir, 'Develop', 'osrswiki-cache')
+    cache_base = os.path.join(home_dir, 'Develop', 'osrswiki', 'cache')
     cache_root_dir = os.path.join(cache_base, 'game-data', 'openrs2_cache')
     version_file = os.path.join(cache_root_dir, "cache.version")
     

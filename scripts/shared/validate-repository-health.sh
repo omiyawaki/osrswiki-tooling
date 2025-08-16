@@ -36,21 +36,33 @@ health_success() {
     echo -e "${GREEN}🟢 $1${NC}"
 }
 
-# Check if we're in the right place
-if [[ ! -f "CLAUDE.md" ]]; then
+# Check if we're in the right place and set paths
+if [[ -f "CLAUDE.md" && -d "main/.git" ]]; then
+    # Running from project root 
+    GIT_ROOT="$(cd main && pwd)"
+    PROJECT_ROOT="$(pwd)"
+    health_success "Running from project root with proper structure"
+elif [[ -d ".git" && -f "../CLAUDE.md" ]]; then
+    # Running from git repo root (main/)
+    GIT_ROOT="$(pwd)"
+    PROJECT_ROOT="$(cd .. && pwd)"
+    health_success "Running from git repository root"
+else
     health_issue "Not in monorepo root - must run from directory containing CLAUDE.md"
+    echo "Current directory: $(pwd)"
+    echo "Expected structure: PROJECT_ROOT/CLAUDE.md and PROJECT_ROOT/main/.git/"
     exit 1
 fi
 
 echo -e "${YELLOW}📋 Phase 1: Main Repository Structure Health${NC}"
 echo "------------------------------------------"
 
-# Check for proper git repository
-if [[ ! -d ".git" ]]; then
-    health_issue "Not a git repository"
+# Check for proper git repository (in main/ subdirectory)
+if [[ ! -d "$GIT_ROOT/.git" ]]; then
+    health_issue "Not a git repository at $GIT_ROOT"
     exit 1
 else
-    health_success "Valid git repository"
+    health_success "Valid git repository at $GIT_ROOT"
 fi
 
 # Check for contamination: worktrees inside main repo
@@ -65,21 +77,25 @@ fi
 
 # Check for proper platform structure
 for platform in android ios; do
-    if [[ -d "platforms/$platform" ]]; then
+    PLATFORM_DIR="$GIT_ROOT/platforms/$platform"
+    if [[ -d "$PLATFORM_DIR" ]]; then
         health_success "Platform $platform directory exists"
         
         # Check that platform dir is not empty
-        if [[ -z "$(ls -A "platforms/$platform" 2>/dev/null)" ]]; then
+        if [[ -z "$(ls -A "$PLATFORM_DIR" 2>/dev/null)" ]]; then
             health_warning "Platform $platform directory is empty"
         fi
     else
-        health_warning "Platform $platform directory missing"
+        health_warning "Platform $platform directory missing at $PLATFORM_DIR"
     fi
 done
 
 # Check for session contamination in git history
 echo -e "${YELLOW}📋 Phase 2: Git History Contamination Check${NC}"
 echo "-----------------------------------------"
+
+# Run git commands from the git root
+cd "$GIT_ROOT"
 
 # Check for session files in git index
 SESSION_FILES=$(git ls-files | grep -E "\\.claude-|claude-[0-9]{8}" || true)
@@ -102,7 +118,7 @@ echo "--------------------------------"
 # Check for uncommitted changes
 if ! git diff --quiet || ! git diff --cached --quiet; then
     health_warning "Uncommitted changes in working directory"
-    echo "  → Run 'git status' to see details"
+    echo "  → Run 'git status' from $GIT_ROOT to see details"
 else
     health_success "Working directory is clean"
 fi
@@ -114,39 +130,43 @@ if [[ -n "$UNTRACKED_FILES" ]]; then
     echo "$UNTRACKED_FILES" | sed 's/^/  /'
 fi
 
-# Check git remotes
+# Check git remotes (verify purely local repository)
 echo -e "${YELLOW}📋 Phase 4: Git Remote Configuration Health${NC}"
 echo "-------------------------------------------"
 
-EXPECTED_REMOTES=("android" "ios" "tooling")
-for remote in "${EXPECTED_REMOTES[@]}"; do
-    if git remote | grep -q "^${remote}$"; then
-        health_success "Remote '$remote' configured"
-        
-        # Test remote connectivity
-        if git ls-remote "$remote" HEAD &>/dev/null; then
-            health_success "Remote '$remote' is accessible"
-        else
-            health_warning "Remote '$remote' is not accessible"
-        fi
-    else
-        health_warning "Expected remote '$remote' not configured"
-    fi
-done
+# Verify no remotes exist (pure local repository)
+REMOTE_COUNT=$(git remote | wc -l)
+if [[ $REMOTE_COUNT -eq 0 ]]; then
+    health_success "No remotes configured (pure local repository)"
+    health_success "Repository properly isolated from external remotes"
+else
+    health_error "Remotes found in main repository - should be purely local"
+    echo -e "${RED}  Found remotes:${NC}"
+    git remote -v | sed 's/^/    /'
+    echo -e "${YELLOW}  Remove with: git remote remove <remote-name>${NC}"
+    echo -e "${YELLOW}  Deployment should only happen from ~/Deploy/ directories${NC}"
+fi
 
 # Check directory structure health
 echo -e "${YELLOW}📋 Phase 5: Directory Structure Health${NC}"
 echo "------------------------------------"
 
-# Check for proper session directory
-if [[ -d "$HOME/Develop/osrswiki-sessions" ]]; then
-    health_success "Session directory exists at ~/Develop/osrswiki-sessions"
+# Check for proper session directory (both old and new locations)
+if [[ -d "$PROJECT_ROOT/sessions" ]]; then
+    health_success "Session directory exists at $PROJECT_ROOT/sessions"
+    
+    # Check session directory contents
+    SESSION_COUNT=$(find "$PROJECT_ROOT/sessions" -maxdepth 1 -type d -name "claude-*" | wc -l)
+    echo "  → Contains $SESSION_COUNT session directories"
+elif [[ -d "$HOME/Develop/osrswiki-sessions" ]]; then
+    health_success "Session directory exists at ~/Develop/osrswiki-sessions (legacy location)"
     
     # Check session directory contents
     SESSION_COUNT=$(find "$HOME/Develop/osrswiki-sessions" -maxdepth 1 -type d -name "claude-*" | wc -l)
     echo "  → Contains $SESSION_COUNT session directories"
+    health_warning "Consider migrating sessions to $PROJECT_ROOT/sessions"
 else
-    health_warning "Session directory not found at ~/Develop/osrswiki-sessions"
+    health_warning "Session directory not found at $PROJECT_ROOT/sessions or ~/Develop/osrswiki-sessions"
 fi
 
 # Check for deploy directory
@@ -184,13 +204,16 @@ fi
 echo -e "${YELLOW}📋 Phase 6: Safety Infrastructure Health${NC}"
 echo "-------------------------------------"
 
-# Check pre-push hook
-if [[ -f ".git/hooks/pre-push" ]] && [[ -x ".git/hooks/pre-push" ]]; then
+# Check pre-push hook (in git root)
+if [[ -f "$GIT_ROOT/.git/hooks/pre-push" ]] && [[ -x "$GIT_ROOT/.git/hooks/pre-push" ]]; then
     health_success "Pre-push safety hook installed and executable"
 else
     health_warning "Pre-push safety hook missing or not executable"
     echo "  → This hook prevents dangerous pushes to deployment repos"
 fi
+
+# Return to project root
+cd "$PROJECT_ROOT"
 
 # Final health summary
 echo -e "${BLUE}========================================"

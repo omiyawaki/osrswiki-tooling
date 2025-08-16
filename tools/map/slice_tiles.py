@@ -27,7 +27,7 @@ PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..
 # Use centralized cache for binary assets
 import os
 HOME_DIR = os.path.expanduser('~')
-CACHE_BASE = os.path.join(HOME_DIR, 'Develop', 'osrswiki-cache')
+CACHE_BASE = os.path.join(HOME_DIR, 'Develop', 'osrswiki', 'cache')
 SOURCE_DIR = os.path.join(CACHE_BASE, 'binary-assets', 'map-images', 'output')
 SOURCE_IMAGES = [f'img-{i}.png' for i in range(4)]
 TEMP_OUTPUT_DIR = os.path.join(PROJECT_ROOT, 'tools', 'map_tiles_temp')

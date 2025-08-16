@@ -11,15 +11,30 @@ print_header "🔧 OSRS Wiki Git-Based Tooling Deployment"
 echo "Date: $(date)"
 echo ""
 
-# Ensure we're in the monorepo root
-if [[ ! -f "CLAUDE.md" ]]; then
+# Check if we're in the right place and set paths
+if [[ -f "CLAUDE.md" && -d "main/.git" ]]; then
+    # Running from project root 
+    GIT_ROOT="$(cd main && pwd)"
+    PROJECT_ROOT="$(pwd)"
+    print_success "Running from project root with proper structure"
+elif [[ -d ".git" && -f "../CLAUDE.md" ]]; then
+    # Running from git repo root (main/)
+    GIT_ROOT="$(pwd)"
+    PROJECT_ROOT="$(cd .. && pwd)"
+    print_success "Running from git repository root"
+else
     print_error "Must run from monorepo root (where CLAUDE.md is located)"
+    echo "Current directory: $(pwd)"
+    echo "Expected structure: PROJECT_ROOT/CLAUDE.md and PROJECT_ROOT/main/.git/"
     exit 1
 fi
 
 # Phase 1: Pre-deployment validation
 print_phase "🔍 Phase 1: Pre-deployment Validation"
 echo "--------------------------------"
+
+# Change to git root for git operations
+cd "$GIT_ROOT"
 
 # Check for uncommitted changes
 if ! git diff-index --quiet HEAD --; then
@@ -30,9 +45,12 @@ if ! git diff-index --quiet HEAD --; then
     echo ""
 fi
 
+# Return to project root for script calls
+cd "$PROJECT_ROOT"
+
 # Run deployment validation
 print_info "Running deployment validation..."
-if ! ./scripts/shared/validate-deployment.sh tooling; then
+if ! ./main/scripts/shared/validate-deployment.sh tooling; then
     print_error "Pre-deployment validation failed"
     echo "Fix validation errors before proceeding"
     exit 1
@@ -45,7 +63,7 @@ print_phase "🏥 Phase 2: Repository Health Check"
 echo "-------------------------------"
 
 print_info "Checking repository health..."
-if ! ./scripts/shared/validate-repository-health.sh; then
+if ! ./main/scripts/shared/validate-repository-health.sh; then
     print_warning " Repository health issues detected"
     echo "Continue anyway? (y/N)"
     read -r response
@@ -60,7 +78,7 @@ print_phase "🏗️  Phase 3: Deployment Environment Setup"
 echo "-------------------------------------"
 
 DEPLOY_TOOLING="$HOME/Deploy/osrswiki-tooling"
-MONOREPO_ROOT="$(pwd)"
+MONOREPO_ROOT="$PROJECT_ROOT"
 
 # Ensure deployment directory exists
 if [[ ! -d "$DEPLOY_TOOLING" ]]; then
@@ -103,11 +121,14 @@ find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
 # Copy all directories except platforms/, preserving structure
 print_info "Copying tooling components (excluding platforms/)..."
 
-# Simple approach - copy each top-level directory explicitly
+# Simple approach - copy each top-level directory explicitly from git root
 for dir in scripts tools shared; do
-    if [[ -d "$MONOREPO_ROOT/$dir" ]]; then
-        echo "  → Copying $dir/"
-        cp -r "$MONOREPO_ROOT/$dir" .
+    SOURCE_DIR="$GIT_ROOT/$dir"
+    if [[ -d "$SOURCE_DIR" ]]; then
+        echo "  → Copying $dir/ from $SOURCE_DIR"
+        cp -r "$SOURCE_DIR" .
+    else
+        echo "  ⚠️  Warning: $dir directory not found at $SOURCE_DIR"
     fi
 done
 
@@ -143,7 +164,7 @@ if ! git diff --cached --quiet; then
     DEPLOY_COMMIT_MSG="deploy: update tooling repository from monorepo
 
 Recent tooling-related changes:
-$(cd "$MONOREPO_ROOT" && git log --oneline --no-merges --max-count=5 main --grep='tool\\|script\\|shared' | sed 's/^/- /' || echo "- Recent commits from monorepo main branch")
+$(cd "$GIT_ROOT" && git log --oneline --no-merges --max-count=5 main --grep='tool\\|script\\|shared' | sed 's/^/- /' || echo "- Recent commits from monorepo main branch")
 
 This deployment:
 - Updates from monorepo (excludes platforms/ directory)
@@ -229,8 +250,8 @@ else
     echo "This may indicate a deployment issue - investigate"
 fi
 
-# Return to monorepo
-cd "$MONOREPO_ROOT"
+# Return to project root
+cd "$PROJECT_ROOT"
 
 echo ""
 print_success "🎊 Git-Based Tooling Deployment Complete!"

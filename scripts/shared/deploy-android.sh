@@ -11,25 +11,40 @@ print_header "🚀 OSRS Wiki Git-Based Android Deployment"
 echo "Date: $(date)"
 echo ""
 
-# Ensure we're in the monorepo root
-if [[ ! -f "CLAUDE.md" ]]; then
+# Check if we're in the right place and set paths
+if [[ -f "CLAUDE.md" && -d "main/.git" ]]; then
+    # Running from project root 
+    GIT_ROOT="$(cd main && pwd)"
+    PROJECT_ROOT="$(pwd)"
+    print_success "Running from project root with proper structure"
+elif [[ -d ".git" && -f "../CLAUDE.md" ]]; then
+    # Running from git repo root (main/)
+    GIT_ROOT="$(pwd)"
+    PROJECT_ROOT="$(cd .. && pwd)"
+    print_success "Running from git repository root"
+else
     print_error "Must run from monorepo root (where CLAUDE.md is located)"
+    echo "Current directory: $(pwd)"
+    echo "Expected structure: PROJECT_ROOT/CLAUDE.md and PROJECT_ROOT/main/.git/"
     exit 1
 fi
 
 # Phase 1: Pre-deployment validation
 print_phase "🔍 Phase 1: Pre-deployment Validation"
 
-# Check for Android platform directory
-if [[ ! -d "platforms/android" ]]; then
-    print_error "Android platform directory not found"
+# Check for Android platform directory (in git root)
+ANDROID_PLATFORM_DIR="$GIT_ROOT/platforms/android"
+if [[ ! -d "$ANDROID_PLATFORM_DIR" ]]; then
+    print_error "Android platform directory not found at $ANDROID_PLATFORM_DIR"
     exit 1
 fi
-print_success "Android platform directory found"
+print_success "Android platform directory found at $ANDROID_PLATFORM_DIR"
 
-# Run deployment validation
+# Run deployment validation (from project root)
+cd "$PROJECT_ROOT"
+
 print_info "Running deployment validation..."
-if ! ./scripts/shared/validate-deployment.sh android; then
+if ! ./main/scripts/shared/validate-deployment.sh android; then
     print_error "Pre-deployment validation failed"
     echo "Fix validation errors before proceeding"
     exit 1
@@ -40,7 +55,7 @@ print_phase "🏥 Phase 2: Repository Health Check"
 echo "-------------------------------"
 
 print_info "Checking repository health..."
-if ! ./scripts/shared/validate-repository-health.sh; then
+if ! ./main/scripts/shared/validate-repository-health.sh; then
     print_warning " Repository health issues detected"
     echo "Continue anyway? (y/N)"
     read -r response
@@ -223,7 +238,7 @@ if [[ -d "$MONOREPO_ROOT/shared" ]]; then
     echo "  → Copying assets (cache-aware strategy)..."
     
     # Check for centralized cache
-    CACHE_BASE="$HOME/Develop/osrswiki-cache"
+    CACHE_BASE="$HOME/Develop/osrswiki/cache"
     CACHE_MBTILES="$CACHE_BASE/binary-assets/mbtiles"
     
     if [[ -d "$MONOREPO_ROOT/shared/assets" ]]; then
@@ -260,7 +275,7 @@ This deployment uses a centralized cache strategy for large binary assets (*.mbt
 ## Asset Management Strategy
 
 ### Centralized Cache Location
-Binary assets are stored in: \`~/Develop/osrswiki-cache/binary-assets/mbtiles/\`
+Binary assets are stored in: \`~/Develop/osrswiki/cache/binary-assets/mbtiles/\`
 
 ### Option 1: Using Asset Generator (Recommended)
 \`\`\`bash
@@ -268,7 +283,7 @@ Binary assets are stored in: \`~/Develop/osrswiki-cache/binary-assets/mbtiles/\`
 cd tools
 ./bin/micromamba run -n osrs-tools python3 map/map-asset-generator.py
 
-# Assets are generated to: ~/Develop/osrswiki-cache/binary-assets/mbtiles/
+# Assets are generated to: ~/Develop/osrswiki/cache/binary-assets/mbtiles/
 # Build system automatically discovers cache assets
 \`\`\`
 
@@ -283,13 +298,13 @@ micromamba activate osrs-tools
 python3 map/map-asset-generator.py --all
 
 # 3. For standalone deployment, copy from cache
-cp ~/Develop/osrswiki-cache/binary-assets/mbtiles/*.mbtiles app/src/main/assets/
+cp ~/Develop/osrswiki/cache/binary-assets/mbtiles/*.mbtiles app/src/main/assets/
 \`\`\`
 
 ### Option 3: Manual Cache Setup
 \`\`\`bash
 # Create cache structure
-mkdir -p ~/Develop/osrswiki-cache/binary-assets/mbtiles/
+mkdir -p ~/Develop/osrswiki/cache/binary-assets/mbtiles/
 
 # Generate or copy .mbtiles files to cache directory
 # Build system will automatically discover them
@@ -307,7 +322,7 @@ For automated deployments, add asset generation to your CI pipeline:
     
 - name: Copy Assets to Deployment
   run: |
-    cp ~/Develop/osrswiki-cache/binary-assets/mbtiles/*.mbtiles app/src/main/assets/
+    cp ~/Develop/osrswiki/cache/binary-assets/mbtiles/*.mbtiles app/src/main/assets/
 \`\`\`
 
 ## Benefits of Centralized Cache

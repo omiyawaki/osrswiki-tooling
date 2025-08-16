@@ -103,20 +103,34 @@ check_current_branch() {
     return 0
 }
 
-# Function to check for agent files in staging area
-check_for_agent_files() {
+# Function to check for improper root-level changes
+check_for_improper_files() {
     local staged_files
     staged_files=$(git diff --cached --name-only 2>/dev/null || echo "")
     
-    if echo "$staged_files" | grep -q "\.claude/agents/.*\.md$\|ANDROID_UI_TESTER_USAGE\.md$"; then
-        echo -e "${RED}❌ Agent files detected in staging area${NC}"
+    # Check for agent files, session files, and root-level changes
+    local improper_files=""
+    
+    # Agent files pattern
+    improper_files+=$(echo "$staged_files" | grep "\.claude/agents/.*\.md$\|ANDROID_UI_TESTER_USAGE\.md$" || true)
+    
+    # Session files pattern  
+    improper_files+=$(echo "$staged_files" | grep "^\.claude-.*$" || true)
+    
+    # Root-level files that should never change in worktrees
+    # Allow only changes within: platforms/, scripts/, shared/, tools/, cloud/
+    improper_files+=$(echo "$staged_files" | grep -v "^platforms/\|^scripts/\|^shared/\|^tools/\|^cloud/" | grep "^[^/]*$" || true)
+    
+    if [[ -n "$improper_files" ]]; then
+        echo -e "${RED}❌ Improper files detected in staging area${NC}"
+        echo "Worktree changes should only modify files within: platforms/, scripts/, shared/, tools/, cloud/"
         echo "These files should not be committed:"
-        echo "$staged_files" | grep "\.claude/agents/.*\.md$\|ANDROID_UI_TESTER_USAGE\.md$" || true
+        echo "$improper_files" | sort | uniq
         echo "Remove these files from staging before committing"
         return 1
     fi
     
-    echo -e "${GREEN}✅ No agent files in staging area${NC}"
+    echo -e "${GREEN}✅ No improper files in staging area${NC}"
     return 0
 }
 
@@ -137,7 +151,7 @@ main() {
     check_main_repo || exit 1
     check_current_branch || exit 1
     check_git_status || exit 1
-    check_for_agent_files || exit 1
+    check_for_improper_files || exit 1
     validate_branch "$branch" || exit 1
     test_merge "$branch" || exit 1
     

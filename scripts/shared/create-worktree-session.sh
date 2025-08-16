@@ -9,8 +9,22 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Must be run from project root directory (where CLAUDE.md is located)
-if [[ ! -f CLAUDE.md ]]; then
+# Check running location and set paths accordingly
+if [[ -f "CLAUDE.md" && -d "main/.git" ]]; then
+    # Running from project root 
+    GIT_ROOT="$(cd main && pwd)"
+    PROJECT_ROOT="$(pwd)"
+elif [[ -d ".git" && -f "../CLAUDE.md" ]]; then
+    # Running from git repo root (main/)
+    GIT_ROOT="$(pwd)"
+    PROJECT_ROOT="$(cd .. && pwd)"
+elif [[ -f "../../../CLAUDE.md" && -d "../../../main/.git" ]]; then
+    # Running from main/scripts/shared
+    GIT_ROOT="$(cd ../../.. && cd main && pwd)"
+    PROJECT_ROOT="$(cd ../../.. && pwd)"
+else
     echo -e "${RED}❌ Must run from project root directory (where CLAUDE.md is located)${NC}"
+    echo "Run this script from /Users/miyawaki/Develop/osrswiki"
     exit 1
 fi
 
@@ -25,8 +39,8 @@ TOPIC="${1:-development}"
 SESSION_NAME="claude-$(date +%Y%m%d-%H%M%S)-$TOPIC"
 BRANCH_NAME="claude/$(date +%Y%m%d-%H%M%S)-$TOPIC"
 
-# NEW: Use dedicated sessions directory outside main repo
-SESSION_PARENT="$HOME/Develop/osrswiki-sessions"
+# NEW: Use dedicated sessions directory within project
+SESSION_PARENT="$PROJECT_ROOT/sessions"
 WORKTREE_DIR="$SESSION_PARENT/$SESSION_NAME"
 
 # Ensure sessions directory exists
@@ -46,9 +60,9 @@ if [[ -d "$WORKTREE_DIR" ]]; then
     exit 1
 fi
 
-# Create worktree with new branch (from current repo)
+# Create worktree with new branch (from git repo)
 echo -e "${YELLOW}🔨 Creating git worktree...${NC}"
-git worktree add "$WORKTREE_DIR" -b "$BRANCH_NAME"
+cd "$GIT_ROOT" && git worktree add "$WORKTREE_DIR" -b "$BRANCH_NAME"
 
 # Set up shared scripts in worktree
 cd "$WORKTREE_DIR"
@@ -62,8 +76,8 @@ else
 fi
 
 # Copy essential untracked files from main repo
-MAIN_REPO_PATH="/Users/miyawaki/Develop/osrswiki"
-CACHE_BASE="$HOME/Develop/osrswiki-cache"
+MAIN_REPO_PATH="$GIT_ROOT"
+CACHE_BASE="$PROJECT_ROOT/cache"
 echo -e "${YELLOW}📁 Copying essential untracked files...${NC}"
 
 # Copy Android local.properties if it exists (contains SDK path)

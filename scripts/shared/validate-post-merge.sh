@@ -77,20 +77,34 @@ check_no_reset() {
     return 0
 }
 
-# Function to check for agent files in the merge
+# Function to check for improper files in the merge
 check_merge_content() {
     local merge_files
     merge_files=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "")
     
-    if echo "$merge_files" | grep -q "\.claude/agents/.*\.md$\|ANDROID_UI_TESTER_USAGE\.md$"; then
-        echo -e "${RED}❌ Agent files included in merge${NC}"
+    # Check for agent files, session files, and root-level changes
+    local improper_files=""
+    
+    # Agent files pattern
+    improper_files+=$(echo "$merge_files" | grep "\.claude/agents/.*\.md$\|ANDROID_UI_TESTER_USAGE\.md$" || true)
+    
+    # Session files pattern  
+    improper_files+=$(echo "$merge_files" | grep "^\.claude-.*$" || true)
+    
+    # Root-level files that should never change in worktrees
+    # Allow only changes within: platforms/, scripts/, shared/, tools/, cloud/
+    improper_files+=$(echo "$merge_files" | grep -v "^platforms/\|^scripts/\|^shared/\|^tools/\|^cloud/" | grep "^[^/]*$" || true)
+    
+    if [[ -n "$improper_files" ]]; then
+        echo -e "${RED}❌ Improper files included in merge${NC}"
+        echo "Worktree changes should only modify files within: platforms/, scripts/, shared/, tools/, cloud/"
         echo "These files should not be part of feature commits:"
-        echo "$merge_files" | grep "\.claude/agents/.*\.md$\|ANDROID_UI_TESTER_USAGE\.md$" || true
+        echo "$improper_files" | sort | uniq
         echo -e "${YELLOW}Consider amending the commit to remove these files${NC}"
         return 1
     fi
     
-    echo -e "${GREEN}✅ No agent files in merge${NC}"
+    echo -e "${GREEN}✅ No improper files in merge${NC}"
     return 0
 }
 

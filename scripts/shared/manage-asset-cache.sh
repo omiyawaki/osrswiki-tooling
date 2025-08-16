@@ -12,7 +12,7 @@ BLUE='\033[0;34m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
-CACHE_BASE="$HOME/Develop/osrswiki-cache"
+CACHE_BASE="$HOME/Develop/osrswiki/cache"
 MBTILES_CACHE="$CACHE_BASE/binary-assets/mbtiles"
 MAP_IMAGES_CACHE="$CACHE_BASE/binary-assets/map-images"
 GAME_DATA_CACHE="$CACHE_BASE/game-data"

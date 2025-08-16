@@ -47,7 +47,7 @@ class MapAssetGenerator:
         
         # Use centralized cache for binary assets
         home_dir = Path.home()
-        self.cache_base = home_dir / "Develop" / "osrswiki-cache"
+        self.cache_base = home_dir / "Develop" / "osrswiki" / "cache"
         self.assets_dir = self.cache_base / "binary-assets" / "mbtiles"
         self.cache_dir = self.cache_base / "game-data" / "openrs2_cache"
         self.version_file = self.cache_dir / "cache.version"

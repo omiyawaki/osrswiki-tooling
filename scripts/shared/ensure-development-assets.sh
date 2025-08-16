@@ -22,7 +22,7 @@ if [[ ! -f "CLAUDE.md" ]]; then
 fi
 
 MONOREPO_ROOT="$(pwd)"
-CACHE_BASE="$HOME/Develop/osrswiki-cache"
+CACHE_BASE="$HOME/Develop/osrswiki/cache"
 MBTILES_CACHE="$CACHE_BASE/binary-assets/mbtiles"
 
 echo -e "${BLUE}📋 Phase 1: Asset Availability Check${NC}"

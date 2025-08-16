@@ -18,9 +18,21 @@ if [[ "$(uname)" != "Darwin" ]]; then
     exit 1
 fi
 
-# Ensure we're in the monorepo root
-if [[ ! -f "CLAUDE.md" ]]; then
+# Check if we're in the right place and set paths
+if [[ -f "CLAUDE.md" && -d "main/.git" ]]; then
+    # Running from project root 
+    GIT_ROOT="$(cd main && pwd)"
+    PROJECT_ROOT="$(pwd)"
+    print_success "Running from project root with proper structure"
+elif [[ -d ".git" && -f "../CLAUDE.md" ]]; then
+    # Running from git repo root (main/)
+    GIT_ROOT="$(pwd)"
+    PROJECT_ROOT="$(cd .. && pwd)"
+    print_success "Running from git repository root"
+else
     print_error "Must run from monorepo root (where CLAUDE.md is located)"
+    echo "Current directory: $(pwd)"
+    echo "Expected structure: PROJECT_ROOT/CLAUDE.md and PROJECT_ROOT/main/.git/"
     exit 1
 fi
 
@@ -28,12 +40,13 @@ fi
 print_phase "🔍 Phase 1: Pre-deployment Validation"
 echo "--------------------------------"
 
-# Check for iOS platform directory
-if [[ ! -d "platforms/ios" ]]; then
-    print_error "iOS platform directory not found"
+# Check for iOS platform directory (in git root)
+IOS_PLATFORM_DIR="$GIT_ROOT/platforms/ios"
+if [[ ! -d "$IOS_PLATFORM_DIR" ]]; then
+    print_error "iOS platform directory not found at $IOS_PLATFORM_DIR"
     exit 1
 fi
-print_success "iOS platform directory found"
+print_success "iOS platform directory found at $IOS_PLATFORM_DIR"
 
 # Check for Xcode
 if ! command -v xcodebuild >/dev/null; then
@@ -43,9 +56,11 @@ if ! command -v xcodebuild >/dev/null; then
 fi
 print_success "Xcode found: $(xcodebuild -version | head -1)"
 
-# Run deployment validation
+# Run deployment validation (from project root)
+cd "$PROJECT_ROOT"
+
 print_info "Running deployment validation..."
-if ! ./scripts/shared/validate-deployment.sh ios; then
+if ! ./main/scripts/shared/validate-deployment.sh ios; then
     print_error "Pre-deployment validation failed"
     echo "Fix validation errors before proceeding"
     exit 1

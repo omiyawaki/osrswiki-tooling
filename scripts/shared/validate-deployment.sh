@@ -21,9 +21,19 @@ fi
 echo -e "${BLUE}🔍 OSRS Wiki Deployment Validation for: $PLATFORM${NC}"
 echo "=================================================="
 
-# Ensure we're in the monorepo root
-if [[ ! -f "CLAUDE.md" ]]; then
+# Check if we're in the right place and set paths
+if [[ -f "CLAUDE.md" && -d "main/.git" ]]; then
+    # Running from project root 
+    GIT_ROOT="$(cd main && pwd)"
+    PROJECT_ROOT="$(pwd)"
+elif [[ -d ".git" && -f "../CLAUDE.md" ]]; then
+    # Running from git repo root (main/)
+    GIT_ROOT="$(pwd)"
+    PROJECT_ROOT="$(cd .. && pwd)"
+else
     echo -e "${RED}❌ Error: Must run from monorepo root (where CLAUDE.md is located)${NC}"
+    echo "Current directory: $(pwd)"
+    echo "Expected structure: PROJECT_ROOT/CLAUDE.md and PROJECT_ROOT/main/.git/"
     exit 1
 fi
 
@@ -48,6 +58,9 @@ validation_success() {
 echo -e "${YELLOW}📋 Phase 1: Repository Structure Validation${NC}"
 echo "-------------------------------------------"
 
+# Change to git root for git operations
+cd "$GIT_ROOT"
+
 # Check that we're not inside a worktree
 if [[ -f ".git" ]] && grep -q "gitdir:" ".git" 2>/dev/null; then
     validation_error "Cannot deploy from inside a git worktree"
@@ -58,6 +71,7 @@ fi
 if ! git diff --quiet || ! git diff --cached --quiet; then
     validation_error "Working directory is not clean"
     echo "Commit or stash your changes before deployment"
+    echo "Run from: $GIT_ROOT"
 fi
 
 # Check that we're on main branch for deployment
@@ -73,9 +87,9 @@ echo "----------------------------------------"
 
 case "$PLATFORM" in
     "android")
-        # Check Android platform directory exists
+        # Check Android platform directory exists (we're now in git root)
         if [[ ! -d "platforms/android" ]]; then
-            validation_error "Android platform directory not found at platforms/android"
+            validation_error "Android platform directory not found at $GIT_ROOT/platforms/android"
         else
             validation_success "Android platform directory found"
         fi
@@ -96,15 +110,15 @@ case "$PLATFORM" in
         ;;
         
     "ios")
-        # Check iOS platform directory exists
+        # Check iOS platform directory exists (we're now in git root)
         if [[ ! -d "platforms/ios" ]]; then
-            validation_error "iOS platform directory not found at platforms/ios"
+            validation_error "iOS platform directory not found at $GIT_ROOT/platforms/ios"
         else
             validation_success "iOS platform directory found"
         fi
         
         # Check for iOS project files
-        if [[ ! -f "platforms/ios/OSRSWiki.xcodeproj/project.pbxproj" ]]; then
+        if [[ ! -f "platforms/ios/OSRS Wiki.xcodeproj/project.pbxproj" ]]; then
             validation_warning "iOS Xcode project may not be properly configured"
         else
             validation_success "iOS Xcode project found"
@@ -114,13 +128,13 @@ case "$PLATFORM" in
     "tooling")
         # For tooling, we deploy the entire repo, so check key components
         if [[ ! -d "tools" ]]; then
-            validation_warning "Tools directory not found - tooling deployment may be incomplete"
+            validation_warning "Tools directory not found at $GIT_ROOT/tools - tooling deployment may be incomplete"
         else
             validation_success "Tools directory found"
         fi
         
         if [[ ! -d "scripts" ]]; then
-            validation_error "Scripts directory not found - critical for tooling deployment"
+            validation_error "Scripts directory not found at $GIT_ROOT/scripts - critical for tooling deployment"
         else
             validation_success "Scripts directory found"
         fi
@@ -132,23 +146,23 @@ case "$PLATFORM" in
         ;;
 esac
 
-# Check shared components that should be integrated
+# Check shared components that should be integrated (we're in git root)
 echo -e "${YELLOW}📋 Phase 3: Shared Components Validation${NC}"
 echo "---------------------------------------"
 
 if [[ -d "shared" ]]; then
-    validation_success "Shared components directory found"
+    validation_success "Shared components directory found at $GIT_ROOT/shared"
     
     # Check for important shared components
-    for component in api models network utils; do
-        if [[ -d "shared/$component" ]]; then
+    for component in css js README.md asset-mapping.json; do
+        if [[ -d "shared/$component" || -f "shared/$component" ]]; then
             validation_success "Shared $component found"
         else
-            validation_warning "Shared $component directory not found"
+            validation_warning "Shared $component not found"
         fi
     done
 else
-    validation_warning "Shared components directory not found"
+    validation_warning "Shared components directory not found at $GIT_ROOT/shared"
 fi
 
 # Git remote validation (DISABLED for zero-access security architecture)
@@ -221,6 +235,9 @@ else
     validation_warning "Deploy directory not found at ~/Deploy"
     echo "It will be created during deployment if needed"
 fi
+
+# Return to project root
+cd "$PROJECT_ROOT"
 
 # Final validation summary
 echo -e "${BLUE}=================================================="
