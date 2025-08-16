@@ -74,7 +74,7 @@ print_info "Validating iOS project build..."
 cd "$GIT_ROOT/platforms/ios"
 
 # Check if project builds successfully (using the actual project name)
-PROJECT_NAME="OSRS Wiki"
+PROJECT_NAME="osrswiki"
 if xcodebuild -project "$PROJECT_NAME.xcodeproj" -scheme "$PROJECT_NAME" -configuration Debug -sdk iphonesimulator build -quiet; then
     print_success "iOS project builds successfully"
 else
