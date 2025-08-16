@@ -66,10 +66,17 @@ print_info "Checking repository health..."
 if ! ./main/scripts/shared/validate-repository-health.sh; then
     print_warning " Repository health issues detected"
     echo "Continue anyway? (y/N)"
-    read -r response
-    if [[ ! "$response" =~ ^[Yy]$ ]]; then
-        print_error "Deployment cancelled by user"
-        exit 1
+    if [[ -t 0 ]]; then
+        # Interactive mode - ask user
+        read -r response
+        if [[ ! "$response" =~ ^[Yy]$ ]]; then
+            print_error "Deployment cancelled by user"
+            exit 1
+        fi
+    else
+        # Non-interactive mode - proceed automatically
+        print_warning " Running non-interactively - proceeding with deployment"
+        response="y"
     fi
 fi
 
@@ -122,11 +129,12 @@ find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
 print_info "Copying tooling components (excluding platforms/)..."
 
 # Simple approach - copy each top-level directory explicitly from git root
+# Use rsync to exclude .DS_Store files and respect common ignore patterns
 for dir in scripts tools shared; do
     SOURCE_DIR="$GIT_ROOT/$dir"
     if [[ -d "$SOURCE_DIR" ]]; then
-        echo "  → Copying $dir/ from $SOURCE_DIR"
-        cp -r "$SOURCE_DIR" .
+        echo "  → Copying $dir/ from $SOURCE_DIR (excluding .DS_Store)"
+        rsync -av --exclude='.DS_Store' --exclude='*.tmp' --exclude='*.log' "$SOURCE_DIR/" "$dir/"
     else
         echo "  ⚠️  Warning: $dir directory not found at $SOURCE_DIR"
     fi

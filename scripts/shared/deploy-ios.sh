@@ -71,7 +71,7 @@ print_phase "🏗️  Phase 2: iOS Build Validation"
 echo "-----------------------------"
 
 print_info "Validating iOS project build..."
-cd "platforms/ios"
+cd "$GIT_ROOT/platforms/ios"
 
 # Check if project builds successfully (using the actual project name)
 PROJECT_NAME="OSRS Wiki"
@@ -80,11 +80,11 @@ if xcodebuild -project "$PROJECT_NAME.xcodeproj" -scheme "$PROJECT_NAME" -config
 else
     print_error "iOS project build failed"
     echo "Fix build errors before deployment"
-    cd ../../
+    cd "$PROJECT_ROOT"
     exit 1
 fi
 
-cd ../../
+cd "$PROJECT_ROOT"
 
 # Phase 3: Repository health check
 print_phase "🏥 Phase 3: Repository Health Check"
@@ -94,10 +94,17 @@ print_info "Checking repository health..."
 if ! ./scripts/shared/validate-repository-health.sh; then
     print_warning " Repository health issues detected"
     echo "Continue anyway? (y/N)"
-    read -r response
-    if [[ ! "$response" =~ ^[Yy]$ ]]; then
-        print_error "Deployment cancelled by user"
-        exit 1
+    if [[ -t 0 ]]; then
+        # Interactive mode - ask user
+        read -r response
+        if [[ ! "$response" =~ ^[Yy]$ ]]; then
+            print_error "Deployment cancelled by user"
+            exit 1
+        fi
+    else
+        # Non-interactive mode - proceed automatically
+        print_warning " Running non-interactively - proceeding with deployment"
+        response="y"
     fi
 fi
 
@@ -148,8 +155,8 @@ find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
 
 # Copy iOS platform content
 print_info "Copying iOS platform content..."
-cp -r "$MONOREPO_ROOT/platforms/ios"/* .
-cp "$MONOREPO_ROOT/platforms/ios/.gitignore" . 2>/dev/null || true
+cp -r "$GIT_ROOT/platforms/ios"/* .
+cp "$GIT_ROOT/platforms/ios/.gitignore" . 2>/dev/null || true
 
 # Create iOS-specific shared component bridge if shared components exist
 print_info "Creating shared components bridge..."

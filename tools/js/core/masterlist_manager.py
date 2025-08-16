@@ -255,10 +255,7 @@ class MasterlistManager:
         if convert_sets:
             data = self._convert_sets_to_lists(data)
         
-        # Create backup if file exists
-        if file_path.exists():
-            backup_path = file_path.with_suffix('.json.backup')
-            shutil.copy2(file_path, backup_path)
+        # No backup needed - files are tracked in git
         
         # Write to temporary file then move (atomic)
         temp_path = file_path.with_suffix('.json.tmp')

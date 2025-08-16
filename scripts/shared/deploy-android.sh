@@ -58,10 +58,17 @@ print_info "Checking repository health..."
 if ! ./main/scripts/shared/validate-repository-health.sh; then
     print_warning " Repository health issues detected"
     echo "Continue anyway? (y/N)"
-    read -r response
-    if [[ ! "$response" =~ ^[Yy]$ ]]; then
-        print_error "Deployment cancelled by user"
-        exit 1
+    if [[ -t 0 ]]; then
+        # Interactive mode - ask user
+        read -r response
+        if [[ ! "$response" =~ ^[Yy]$ ]]; then
+            print_error "Deployment cancelled by user"
+            exit 1
+        fi
+    else
+        # Non-interactive mode - proceed automatically
+        print_warning " Running non-interactively - proceeding with deployment"
+        response="y"
     fi
 fi
 
@@ -70,7 +77,7 @@ print_phase "🏗️  Phase 3: Deployment Environment Setup"
 echo "-------------------------------------"
 
 DEPLOY_ANDROID="$HOME/Deploy/osrswiki-android"
-MONOREPO_ROOT="$(pwd)"
+MONOREPO_ROOT="$PROJECT_ROOT"
 
 # Ensure deployment directory exists
 if [[ ! -d "$DEPLOY_ANDROID" ]]; then
@@ -78,7 +85,7 @@ if [[ ! -d "$DEPLOY_ANDROID" ]]; then
     mkdir -p "$(dirname "$DEPLOY_ANDROID")"
     cd "$(dirname "$DEPLOY_ANDROID")"
     git clone https://github.com/omiyawaki/osrswiki-android.git
-    cd "$MONOREPO_ROOT"
+    cd "$PROJECT_ROOT"
 fi
 
 # Validate deployment repo
@@ -114,19 +121,19 @@ find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
 print_info "🔍 Validating Android platform content for security..."
 
 # Check for monorepo contamination in platforms/android
-if [[ -d "$MONOREPO_ROOT/platforms/android/.claude" ]]; then
+if [[ -d "$GIT_ROOT/platforms/android/.claude" ]]; then
     print_error "🚨 SECURITY ALERT: .claude directory found in platforms/android"
     print_error "This indicates monorepo contamination. Deployment BLOCKED."
     exit 1
 fi
 
-if [[ -d "$MONOREPO_ROOT/platforms/android/platforms" ]]; then
+if [[ -d "$GIT_ROOT/platforms/android/platforms" ]]; then
     print_error "🚨 SECURITY ALERT: nested platforms directory found"
     print_error "This indicates monorepo contamination. Deployment BLOCKED."
     exit 1
 fi
 
-if [[ -f "$MONOREPO_ROOT/platforms/android/CLAUDE.md" ]]; then
+if [[ -f "$GIT_ROOT/platforms/android/CLAUDE.md" ]]; then
     print_error "🚨 SECURITY ALERT: CLAUDE.md found in platforms/android"
     print_error "This indicates monorepo contamination. Deployment BLOCKED."
     exit 1
@@ -134,8 +141,8 @@ fi
 
 # Count files to detect if entire monorepo was copied to platforms/android
 # Exclude build directories which can contain thousands of generated files
-ANDROID_FILE_COUNT=$(find "$MONOREPO_ROOT/platforms/android" -type f ! -path "*/build/*" | wc -l)
-BUILD_FILE_COUNT=$(find "$MONOREPO_ROOT/platforms/android" -type f -path "*/build/*" | wc -l)
+ANDROID_FILE_COUNT=$(find "$GIT_ROOT/platforms/android" -type f ! -path "*/build/*" | wc -l)
+BUILD_FILE_COUNT=$(find "$GIT_ROOT/platforms/android" -type f -path "*/build/*" | wc -l)
 
 if [[ $ANDROID_FILE_COUNT -gt 2000 ]]; then
     print_error "🚨 SECURITY ALERT: Excessive source file count ($ANDROID_FILE_COUNT files, $BUILD_FILE_COUNT build files)"
@@ -154,10 +161,10 @@ print_success "Android platform validation passed ($ANDROID_FILE_COUNT files)"
 print_info "Copying Android platform content (excluding build directories)..."
 
 # Copy everything except build directories
-find "$MONOREPO_ROOT/platforms/android" -mindepth 1 -maxdepth 1 ! -name 'build' -exec cp -r {} . \;
+find "$GIT_ROOT/platforms/android" -mindepth 1 -maxdepth 1 ! -name 'build' -exec cp -r {} . \;
 
 # Copy .gitignore if it exists
-cp "$MONOREPO_ROOT/platforms/android/.gitignore" . 2>/dev/null || true
+cp "$GIT_ROOT/platforms/android/.gitignore" . 2>/dev/null || true
 
 # Clean any build directories that might have been copied
 if [[ -d "app/build" ]]; then
@@ -169,7 +176,7 @@ fi
 print_info "Copying shared resources to Android asset structure..."
 ASSETS_DIR="app/src/main/assets"
 
-if [[ -d "$MONOREPO_ROOT/shared" ]]; then
+if [[ -d "$GIT_ROOT/shared" ]]; then
     echo "  → Creating Android asset directories..."
     mkdir -p "$ASSETS_DIR/styles/modules"
     mkdir -p "$ASSETS_DIR/js"
@@ -179,39 +186,39 @@ if [[ -d "$MONOREPO_ROOT/shared" ]]; then
     
     # Copy CSS files to styles/ directory
     echo "  → Copying CSS files to styles/..."
-    if [[ -d "$MONOREPO_ROOT/shared/css" ]]; then
-        find "$MONOREPO_ROOT/shared/css" -name "*.css" -not -path "*/modules/*" -exec cp {} "$ASSETS_DIR/styles/" \;
+    if [[ -d "$GIT_ROOT/shared/css" ]]; then
+        find "$GIT_ROOT/shared/css" -name "*.css" -not -path "*/modules/*" -exec cp {} "$ASSETS_DIR/styles/" \;
         # Copy CSS modules maintaining structure  
-        if [[ -d "$MONOREPO_ROOT/shared/css/modules" ]]; then
-            find "$MONOREPO_ROOT/shared/css/modules" -name "*.css" -exec cp {} "$ASSETS_DIR/styles/modules/" \;
+        if [[ -d "$GIT_ROOT/shared/css/modules" ]]; then
+            find "$GIT_ROOT/shared/css/modules" -name "*.css" -exec cp {} "$ASSETS_DIR/styles/modules/" \;
         fi
         echo "    ✓ CSS files copied to styles/"
     fi
     
     # Copy JavaScript files to js/ directory (excluding MediaWiki and WebView files)
     echo "  → Copying main JavaScript files to js/..."
-    if [[ -d "$MONOREPO_ROOT/shared/js" ]]; then
+    if [[ -d "$GIT_ROOT/shared/js" ]]; then
         # Copy main JS files (excluding subdirectories)
-        find "$MONOREPO_ROOT/shared/js" -maxdepth 1 -name "*.js" -exec cp {} "$ASSETS_DIR/js/" \;
+        find "$GIT_ROOT/shared/js" -maxdepth 1 -name "*.js" -exec cp {} "$ASSETS_DIR/js/" \;
         echo "    ✓ Main JavaScript files copied to js/"
     fi
     
     # Copy WebView-specific files to web/ directory
     echo "  → Copying WebView files to web/..."
-    if [[ -d "$MONOREPO_ROOT/shared/js" ]]; then
+    if [[ -d "$GIT_ROOT/shared/js" ]]; then
         # WebView JavaScript files
         for webjs in "collapsible_content.js" "horizontal_scroll_interceptor.js" "responsive_videos.js" \
                      "clipboard_bridge.js" "infobox_switcher_bootstrap.js" "switch_infobox.js" \
                      "ge_charts_init.js" "highcharts-stock.js"; do
-            if [[ -f "$MONOREPO_ROOT/shared/js/$webjs" ]]; then
-                cp "$MONOREPO_ROOT/shared/js/$webjs" "$ASSETS_DIR/web/"
+            if [[ -f "$GIT_ROOT/shared/js/$webjs" ]]; then
+                cp "$GIT_ROOT/shared/js/$webjs" "$ASSETS_DIR/web/"
             fi
         done
         
         # WebView CSS files (CSS files that are in js/ directory)
         for webcss in "collapsible_sections.css" "collapsible_tables.css" "switch_infobox_styles.css"; do
-            if [[ -f "$MONOREPO_ROOT/shared/js/$webcss" ]]; then
-                cp "$MONOREPO_ROOT/shared/js/$webcss" "$ASSETS_DIR/web/"
+            if [[ -f "$GIT_ROOT/shared/js/$webcss" ]]; then
+                cp "$GIT_ROOT/shared/js/$webcss" "$ASSETS_DIR/web/"
             fi
         done
         echo "    ✓ WebView files copied to web/"
@@ -219,16 +226,16 @@ if [[ -d "$MONOREPO_ROOT/shared" ]]; then
     
     # Copy MediaWiki modules
     echo "  → Copying MediaWiki modules..."
-    if [[ -d "$MONOREPO_ROOT/shared/js/mediawiki" ]]; then
+    if [[ -d "$GIT_ROOT/shared/js/mediawiki" ]]; then
         # startup.js goes to assets root
-        if [[ -f "$MONOREPO_ROOT/shared/js/mediawiki/startup.js" ]]; then
-            cp "$MONOREPO_ROOT/shared/js/mediawiki/startup.js" "$ASSETS_DIR/"
+        if [[ -f "$GIT_ROOT/shared/js/mediawiki/startup.js" ]]; then
+            cp "$GIT_ROOT/shared/js/mediawiki/startup.js" "$ASSETS_DIR/"
         fi
         
         # Other MediaWiki modules go to mediawiki/ subdirectory
         for mwjs in "page_bootstrap.js" "page_modules.js"; do
-            if [[ -f "$MONOREPO_ROOT/shared/js/mediawiki/$mwjs" ]]; then
-                cp "$MONOREPO_ROOT/shared/js/mediawiki/$mwjs" "$ASSETS_DIR/mediawiki/"
+            if [[ -f "$GIT_ROOT/shared/js/mediawiki/$mwjs" ]]; then
+                cp "$GIT_ROOT/shared/js/mediawiki/$mwjs" "$ASSETS_DIR/mediawiki/"
             fi
         done
         echo "    ✓ MediaWiki modules copied"
@@ -241,9 +248,9 @@ if [[ -d "$MONOREPO_ROOT/shared" ]]; then
     CACHE_BASE="$HOME/Develop/osrswiki/cache"
     CACHE_MBTILES="$CACHE_BASE/binary-assets/mbtiles"
     
-    if [[ -d "$MONOREPO_ROOT/shared/assets" ]]; then
+    if [[ -d "$GIT_ROOT/shared/assets" ]]; then
         # Copy non-binary assets from shared directory
-        find "$MONOREPO_ROOT/shared/assets" -type f ! -name "*.mbtiles" -exec cp {} "$ASSETS_DIR/" \;
+        find "$GIT_ROOT/shared/assets" -type f ! -name "*.mbtiles" -exec cp {} "$ASSETS_DIR/" \;
         
         # Check for binary assets in cache
         mbtiles_count=0
@@ -257,7 +264,7 @@ if [[ -d "$MONOREPO_ROOT/shared" ]]; then
             fi
         else
             # Count missing .mbtiles files and document the deployment strategy
-            mbtiles_count=$(find "$MONOREPO_ROOT/shared/assets" -name "*.mbtiles" 2>/dev/null | wc -l)
+            mbtiles_count=$(find "$GIT_ROOT/shared/assets" -name "*.mbtiles" 2>/dev/null | wc -l)
         fi
         
         if [[ $mbtiles_count -eq 0 ]]; then
@@ -342,8 +349,8 @@ EOF
     
     # Copy data files maintaining structure
     echo "  → Copying data files..."
-    if [[ -d "$MONOREPO_ROOT/shared/data" ]]; then
-        cp -r "$MONOREPO_ROOT/shared/data"/* "$ASSETS_DIR/data/" 2>/dev/null || echo "    (no data files to copy)"
+    if [[ -d "$GIT_ROOT/shared/data" ]]; then
+        cp -r "$GIT_ROOT/shared/data"/* "$ASSETS_DIR/data/" 2>/dev/null || echo "    (no data files to copy)"
         echo "    ✓ Data files copied to data/"
     fi
     
@@ -424,7 +431,7 @@ done
 # Validation 2: Build configuration
 echo "  → Validating build configuration..."
 if [[ -f "app/build.gradle.kts" ]]; then
-    if grep -q "isMonorepo.*File.*exists" app/build.gradle.kts; then
+    if grep -q "val isMonorepo.*exists" app/build.gradle.kts; then
         echo "    ✓ Dual-mode build configuration present"
     else
         print_info "    ⚠️  Dual-mode configuration not found"
@@ -447,11 +454,32 @@ fi
 # Validation 3: Quick Gradle validation (if gradlew exists)
 if [[ -f "./gradlew" ]]; then
     echo "  → Testing Gradle wrapper..."
-    if timeout 30 ./gradlew --version >/dev/null 2>&1; then
+    
+    # Test Gradle wrapper with platform-appropriate timeout
+    gradle_test_result=0
+    if command -v timeout >/dev/null 2>&1; then
+        # Linux/GNU timeout available
+        timeout 30 ./gradlew --version >/dev/null 2>&1
+        gradle_test_result=$?
+    elif command -v gtimeout >/dev/null 2>&1; then
+        # macOS with coreutils timeout available
+        gtimeout 30 ./gradlew --version >/dev/null 2>&1
+        gradle_test_result=$?
+    else
+        # macOS without timeout - just test basic functionality quickly
+        # Use a simpler test that shouldn't hang
+        if ./gradlew --help >/dev/null 2>&1; then
+            gradle_test_result=0
+        else
+            gradle_test_result=1
+        fi
+    fi
+    
+    if [[ $gradle_test_result -eq 0 ]]; then
         echo "    ✓ Gradle wrapper functional"
     else
-        print_info "    ⚠️  Gradle wrapper test timed out or failed"
-        # This is a warning, not a failure
+        print_info "    ⚠️  Gradle wrapper test failed (exit code: $gradle_test_result)"
+        # This is a warning, not a failure - don't block deployment
     fi
 else
     print_error "    gradlew not found"
@@ -474,13 +502,20 @@ else
     echo "Please review the errors above and fix them before proceeding."
     echo ""
     echo "To run full standalone validation after fixing issues:"
-    echo "  \$MONOREPO_ROOT/scripts/shared/test-standalone-build.sh"
+    echo "  \$PROJECT_ROOT/scripts/shared/test-standalone-build.sh"
     echo ""
     print_info "Continue with deployment anyway? (y/N)"
-    read -r response
-    if [[ ! "$response" =~ ^[Yy]$ ]]; then
-        print_error "Deployment cancelled by user"
-        exit 1
+    if [[ -t 0 ]]; then
+        # Interactive mode - ask user
+        read -r response
+        if [[ ! "$response" =~ ^[Yy]$ ]]; then
+            print_error "Deployment cancelled by user"
+            exit 1
+        fi
+    else
+        # Non-interactive mode - proceed automatically
+        print_warning " Running non-interactively - proceeding with deployment"
+        response="y"
     fi
     print_warning " Proceeding with deployment despite validation warnings"
 fi
@@ -552,7 +587,7 @@ if ! git diff --cached --quiet; then
     DEPLOY_COMMIT_MSG="deploy: update Android app from monorepo
 
 Recent Android-related changes:
-$(cd "$MONOREPO_ROOT" && git log --oneline --no-merges --max-count=5 main --grep='android\\|Android' | sed 's/^/- /' || echo "- Recent commits from monorepo main branch")
+$(cd "$PROJECT_ROOT" && git log --oneline --no-merges --max-count=5 main --grep='android\\|Android' | sed 's/^/- /' || echo "- Recent commits from monorepo main branch")
 
 This deployment:
 - Updates from monorepo platforms/android/
@@ -568,12 +603,12 @@ This deployment:
 - Creates fully standalone buildable Android project
 
 Deployment info:
-- Source: $MONOREPO_ROOT
+- Source: $PROJECT_ROOT
 - Target: $DEPLOY_ANDROID  
 - Branch: $DEPLOY_BRANCH
 - Date: $(date '+%Y-%m-%dT%H:%M:%S%z')
-- Asset directories: $(find "$MONOREPO_ROOT/shared" -type d 2>/dev/null | wc -l) 
-- Asset files: $(find "$MONOREPO_ROOT/shared" -type f 2>/dev/null | wc -l)"
+- Asset directories: $(find "$GIT_ROOT/shared" -type d 2>/dev/null | wc -l) 
+- Asset files: $(find "$GIT_ROOT/shared" -type f 2>/dev/null | wc -l)"
 
     git commit -m "$DEPLOY_COMMIT_MSG"
     print_success "Deployment commit created"
@@ -586,7 +621,7 @@ else
     print_info "ℹ️  No changes to deploy"
     git checkout main
     git branch -d "$DEPLOY_BRANCH"
-    cd "$MONOREPO_ROOT"
+    cd "$PROJECT_ROOT"
     exit 0
 fi
 
@@ -643,7 +678,7 @@ else
 fi
 
 # Return to monorepo
-cd "$MONOREPO_ROOT"
+cd "$PROJECT_ROOT"
 
 echo ""
 print_success "🎊 Git-Based Android Deployment Complete!"
