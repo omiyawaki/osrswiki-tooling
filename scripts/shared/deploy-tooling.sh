@@ -7,11 +7,29 @@ set -euo pipefail
 # Source color utilities (auto-detects Claude Code environment)
 source "$(dirname "${BASH_SOURCE[0]}")/color-utils.sh"
 
+# Error handling function for better debugging
+handle_error() {
+    local exit_code=$?
+    local line_number=$1
+    print_error "🚨 Script failed at line $line_number with exit code $exit_code"
+    echo "Command that failed: ${BASH_COMMAND}"
+    echo "Working directory: $(pwd)"
+    echo "Script phase: $CURRENT_PHASE"
+    exit $exit_code
+}
+
+# Set up error trap
+trap 'handle_error $LINENO' ERR
+
+# Initialize phase tracking
+CURRENT_PHASE="Initialization"
+
 print_header "🔧 OSRS Wiki Git-Based Tooling Deployment"
 echo "Date: $(date)"
 echo ""
 
 # Check if we're in the right place and set paths
+CURRENT_PHASE="Directory Structure Validation"
 if [[ -f "CLAUDE.md" && -d "main/.git" ]]; then
     # Running from project root 
     GIT_ROOT="$(cd main && pwd)"
@@ -30,6 +48,7 @@ else
 fi
 
 # Phase 1: Pre-deployment validation
+CURRENT_PHASE="Pre-deployment Validation"
 print_phase "🔍 Phase 1: Pre-deployment Validation"
 echo "--------------------------------"
 
@@ -59,6 +78,7 @@ fi
 print_success "Pre-deployment validation passed"
 
 # Phase 2: Repository health check
+CURRENT_PHASE="Repository Health Check"
 print_phase "🏥 Phase 2: Repository Health Check"
 echo "-------------------------------"
 
@@ -81,6 +101,7 @@ if ! ./main/scripts/shared/validate-repository-health.sh; then
 fi
 
 # Phase 3: Setup deployment environment
+CURRENT_PHASE="Deployment Environment Setup"
 print_phase "🏗️  Phase 3: Deployment Environment Setup"
 echo "-------------------------------------"
 
@@ -105,6 +126,7 @@ fi
 print_success "Deployment environment ready"
 
 # Phase 4: Update deployment repository content
+CURRENT_PHASE="Update Deployment Content"
 print_phase "📦 Phase 4: Update Deployment Content"
 echo "-----------------------------------"
 
@@ -204,6 +226,7 @@ else
 fi
 
 # Phase 5: Push to remote
+CURRENT_PHASE="Push to Remote"
 print_phase "🚀 Phase 5: Push to Remote"
 echo "------------------------"
 

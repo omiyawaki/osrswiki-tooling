@@ -7,11 +7,29 @@ set -euo pipefail
 # Source color utilities (auto-detects Claude Code environment)
 source "$(dirname "${BASH_SOURCE[0]}")/color-utils.sh"
 
+# Error handling function for better debugging
+handle_error() {
+    local exit_code=$?
+    local line_number=$1
+    print_error "🚨 Script failed at line $line_number with exit code $exit_code"
+    echo "Command that failed: ${BASH_COMMAND}"
+    echo "Working directory: $(pwd)"
+    echo "Script phase: $CURRENT_PHASE"
+    exit $exit_code
+}
+
+# Set up error trap
+trap 'handle_error $LINENO' ERR
+
+# Initialize phase tracking
+CURRENT_PHASE="Initialization"
+
 print_header "🚀 OSRS Wiki Git-Based iOS Deployment"
 echo "Date: $(date)"
 echo ""
 
 # macOS requirement check
+CURRENT_PHASE="macOS Environment Check"
 if [[ "$(uname)" != "Darwin" ]]; then
     print_error "iOS deployment requires macOS"
     echo "This script can only run on macOS with Xcode installed"
@@ -19,6 +37,7 @@ if [[ "$(uname)" != "Darwin" ]]; then
 fi
 
 # Check if we're in the right place and set paths
+CURRENT_PHASE="Directory Structure Validation"
 if [[ -f "CLAUDE.md" && -d "main/.git" ]]; then
     # Running from project root 
     GIT_ROOT="$(cd main && pwd)"
@@ -37,6 +56,7 @@ else
 fi
 
 # Phase 1: Pre-deployment validation
+CURRENT_PHASE="Pre-deployment Validation"
 print_phase "🔍 Phase 1: Pre-deployment Validation"
 echo "--------------------------------"
 
@@ -67,6 +87,7 @@ if ! ./main/scripts/shared/validate-deployment.sh ios; then
 fi
 
 # Phase 2: iOS build validation
+CURRENT_PHASE="iOS Build Validation"
 print_phase "🏗️  Phase 2: iOS Build Validation"
 echo "-----------------------------"
 
@@ -87,11 +108,12 @@ fi
 cd "$PROJECT_ROOT"
 
 # Phase 3: Repository health check
+CURRENT_PHASE="Repository Health Check"
 print_phase "🏥 Phase 3: Repository Health Check"
 echo "-------------------------------"
 
 print_info "Checking repository health..."
-if ! ./scripts/shared/validate-repository-health.sh; then
+if ! "$GIT_ROOT/scripts/shared/validate-repository-health.sh"; then
     print_warning " Repository health issues detected"
     echo "Continue anyway? (y/N)"
     if [[ -t 0 ]]; then
@@ -133,6 +155,7 @@ fi
 print_success "Deployment environment ready"
 
 # Phase 5: Update deployment repository content
+CURRENT_PHASE="Update Deployment Content"
 print_phase "📦 Phase 5: Update Deployment Content"
 echo "-----------------------------------"
 
@@ -158,11 +181,32 @@ print_info "Copying iOS platform content..."
 cp -r "$GIT_ROOT/platforms/ios"/* .
 cp "$GIT_ROOT/platforms/ios/.gitignore" . 2>/dev/null || true
 
+# Handle MBTiles files - copy from cache instead of following symlinks
+print_info "Copying MBTiles files from cache..."
+CACHE_MBTILES="$HOME/Develop/osrswiki/cache/binary-assets/mbtiles"
+if [[ -d "$CACHE_MBTILES" ]]; then
+    # Remove any symlinked MBTiles files
+    find . -name "*.mbtiles" -type l -delete
+    
+    # Copy actual MBTiles files from cache
+    find "$CACHE_MBTILES" -name "*.mbtiles" -exec cp {} osrswiki/ \; 2>/dev/null || true
+    mbtiles_count=$(find "$CACHE_MBTILES" -name "*.mbtiles" 2>/dev/null | wc -l)
+    
+    if [[ $mbtiles_count -gt 0 ]]; then
+        print_success "    ✓ Copied $mbtiles_count MBTiles files from cache"
+    else
+        print_warning "    ⚠ No MBTiles files found in cache"
+    fi
+else
+    print_warning "    ⚠ Cache directory not found: $CACHE_MBTILES"
+    print_info "    Run map generation tools to populate cache"
+fi
+
 # Create iOS-specific shared component bridge if shared components exist
 print_info "Creating shared components bridge..."
 IOS_SHARED_DIR="osrswiki/Shared"
 
-if [[ -d "$MONOREPO_ROOT/shared" ]]; then
+if [[ -d "$GIT_ROOT/shared" ]]; then
     mkdir -p "$IOS_SHARED_DIR"
     
     # Create Swift bridge file for shared components
@@ -262,7 +306,7 @@ if ! git diff --cached --quiet; then
     DEPLOY_COMMIT_MSG="deploy: update iOS app from monorepo
 
 Recent iOS-related changes:
-$(cd "$MONOREPO_ROOT" && git log --oneline --no-merges --max-count=5 main --grep='ios\\|iOS' | sed 's/^/- /' || echo "- Recent commits from monorepo main branch")
+$(cd "$GIT_ROOT" && git log --oneline --no-merges --max-count=5 main --grep='ios\\|iOS' | sed 's/^/- /' || echo "- Recent commits from monorepo main branch")
 
 This deployment:
 - Updates from monorepo platforms/ios/
@@ -276,7 +320,7 @@ Deployment info:
 - Branch: $DEPLOY_BRANCH  
 - Date: $(date '+%Y-%m-%dT%H:%M:%S%z')
 - Xcode Version: $(xcodebuild -version | head -1)
-- Shared components: $(ls -d "$MONOREPO_ROOT/shared"/* 2>/dev/null | wc -l) modules"
+- Shared components: $(ls -d "$GIT_ROOT/shared"/* 2>/dev/null | wc -l) modules"
 
     git commit -m "$DEPLOY_COMMIT_MSG"
     print_success "Deployment commit created"
@@ -294,6 +338,7 @@ else
 fi
 
 # Phase 6: Push to remote
+CURRENT_PHASE="Push to Remote"
 print_phase "🚀 Phase 6: Push to Remote"
 echo "------------------------"
 
