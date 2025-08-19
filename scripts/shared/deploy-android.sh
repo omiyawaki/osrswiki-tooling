@@ -606,31 +606,10 @@ git add -A
 
 # Create deployment commit if there are changes
 if ! git diff --cached --quiet; then
-    DEPLOY_COMMIT_MSG="deploy: update Android app from monorepo
-
-Recent Android-related changes:
-$(cd "$GIT_ROOT" && git log --oneline --no-merges --max-count=5 main --grep='android\\|Android' | sed 's/^/- /' || echo "- Recent commits from monorepo main branch")
-
-This deployment:
-- Updates from monorepo platforms/android/
-- Copies shared web assets to proper Android structure
-- Organizes CSS files in styles/ directory
-- Places WebView assets in web/ directory  
-- Configures MediaWiki modules appropriately
-- Includes map tiles and data files
-- Uses dual-mode build configuration (auto-detects environment)
-- Build system works in both monorepo and standalone modes
-- Validates deployment integrity during process
-- Maintains Android-specific .gitignore
-- Creates fully standalone buildable Android project
-
-Deployment info:
-- Source: $PROJECT_ROOT
-- Target: $DEPLOY_ANDROID  
-- Branch: $DEPLOY_BRANCH
-- Date: $(date '+%Y-%m-%dT%H:%M:%S%z')
-- Asset directories: $(find "$GIT_ROOT/shared" -type d 2>/dev/null | wc -l) 
-- Asset files: $(find "$GIT_ROOT/shared" -type f 2>/dev/null | wc -l)"
+    # Generate intelligent commit message based on actual changes
+    print_info "🧠 Generating intelligent commit message..."
+    DEPLOY_COMMIT_MSG=$(source "$PROJECT_ROOT/scripts/shared/generate-smart-commit-message.sh" && \
+                        generate_deployment_commit_message "android" "$GIT_ROOT" "$DEPLOY_ANDROID")
 
     git commit -m "$DEPLOY_COMMIT_MSG"
     print_success "Deployment commit created"

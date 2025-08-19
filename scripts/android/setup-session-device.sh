@@ -85,12 +85,14 @@ if command -v avdmanager >/dev/null 2>&1; then
         for emulator in "${ORPHANED_EMULATORS[@]}"; do
         session_name="${emulator#test-}"
         is_orphaned=true
-        for active_session in "${ACTIVE_SESSIONS[@]}"; do
-            if [[ "$session_name" == "$active_session" ]]; then
-                is_orphaned=false
-                break
-            fi
-        done
+        if [[ ${#ACTIVE_SESSIONS[@]} -gt 0 ]]; then
+            for active_session in "${ACTIVE_SESSIONS[@]}"; do
+                if [[ "$session_name" == "$active_session" ]]; then
+                    is_orphaned=false
+                    break
+                fi
+            done
+        fi
         if [[ "$is_orphaned" == "true" ]]; then
             ((TRULY_ORPHANED++))
         fi
