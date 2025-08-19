@@ -28,6 +28,11 @@ fi
 
 echo "🔨 Quick iOS build and test on simulator: $SIMULATOR_NAME"
 echo "📱 Device UDID: $IOS_SIMULATOR_UDID"
+echo ""
+echo "💡 For UI testing and navigation, see:"
+echo "   Apple XCTest Documentation: https://developer.apple.com/documentation/xctest"
+echo "   UI Testing Guide: https://developer.apple.com/library/archive/documentation/DeveloperTools/Conceptual/testing_with_xcode/chapters/09-ui_testing.html"
+echo ""
 
 # Ensure we're on macOS (required for iOS development)
 if [[ "$(uname)" != "Darwin" ]]; then
@@ -65,7 +70,7 @@ xcodebuild \
     -scheme "osrswiki" \
     -configuration Debug \
     -sdk iphonesimulator \
-    -destination "id=$IOS_SIMULATOR_UDID" \
+    -destination "platform=iOS Simulator,arch=arm64,id=$IOS_SIMULATOR_UDID" \
     build \
     -quiet
 

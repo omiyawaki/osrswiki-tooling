@@ -191,24 +191,10 @@ git add -A
 
 # Create deployment commit if there are changes
 if ! git diff --cached --quiet; then
-    DEPLOY_COMMIT_MSG="deploy: update tooling repository from monorepo
-
-Recent tooling-related changes:
-$(cd "$GIT_ROOT" && git log --oneline --no-merges --max-count=5 main --grep='tool\\|script\\|shared' | sed 's/^/- /' || echo "- Recent commits from monorepo main branch")
-
-This deployment:
-- Updates from monorepo (excludes platforms/ directory)
-- Includes all development tools and scripts
-- Includes shared cross-platform components
-- Includes documentation and configuration
-- Maintains proper tooling repository structure
-
-Deployment info:
-- Source: $MONOREPO_ROOT
-- Target: $DEPLOY_TOOLING  
-- Branch: $DEPLOY_BRANCH
-- Date: $(date '+%Y-%m-%dT%H:%M:%S%z')
-- Platforms excluded: android, ios (deployed to separate repositories)"
+    # Generate intelligent commit message based on actual changes
+    print_info "🧠 Generating intelligent commit message..."
+    DEPLOY_COMMIT_MSG=$(source "$MONOREPO_ROOT/scripts/shared/generate-smart-commit-message.sh" && \
+                        generate_deployment_commit_message "tooling" "$GIT_ROOT" "$DEPLOY_TOOLING")
 
     git commit -m "$DEPLOY_COMMIT_MSG"
     print_success "Deployment commit created"

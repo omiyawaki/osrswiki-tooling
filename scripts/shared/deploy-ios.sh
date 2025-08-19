@@ -303,24 +303,10 @@ git add -A
 
 # Create deployment commit if there are changes
 if ! git diff --cached --quiet; then
-    DEPLOY_COMMIT_MSG="deploy: update iOS app from monorepo
-
-Recent iOS-related changes:
-$(cd "$GIT_ROOT" && git log --oneline --no-merges --max-count=5 main --grep='ios\\|iOS' | sed 's/^/- /' || echo "- Recent commits from monorepo main branch")
-
-This deployment:
-- Updates from monorepo platforms/ios/
-- Creates Swift bridges for shared components
-- Maintains iOS-specific .gitignore
-- Preserves Xcode project structure
-
-Deployment info:
-- Source: $MONOREPO_ROOT
-- Target: $DEPLOY_IOS
-- Branch: $DEPLOY_BRANCH  
-- Date: $(date '+%Y-%m-%dT%H:%M:%S%z')
-- Xcode Version: $(xcodebuild -version | head -1)
-- Shared components: $(ls -d "$GIT_ROOT/shared"/* 2>/dev/null | wc -l) modules"
+    # Generate intelligent commit message based on actual changes
+    print_info "🧠 Generating intelligent commit message..."
+    DEPLOY_COMMIT_MSG=$(source "$MONOREPO_ROOT/scripts/shared/generate-smart-commit-message.sh" && \
+                        generate_deployment_commit_message "ios" "$GIT_ROOT" "$DEPLOY_IOS")
 
     git commit -m "$DEPLOY_COMMIT_MSG"
     print_success "Deployment commit created"
