@@ -74,7 +74,7 @@ echo ""
 echo -e "${BLUE}🔍 Checking for system-wide orphaned emulators...${NC}"
 if command -v avdmanager >/dev/null 2>&1; then
     ORPHANED_EMULATORS=($(avdmanager list avd | grep "Name: test-claude-" | sed 's/^.*Name: //' || true))
-    SESSIONS_DIR="$HOME/Develop/osrswiki-sessions"
+    SESSIONS_DIR="$HOME/Develop/osrswiki/sessions"
     ACTIVE_SESSIONS=()
     if [[ -d "$SESSIONS_DIR" ]]; then
         ACTIVE_SESSIONS=($(find "$SESSIONS_DIR" -maxdepth 1 -type d -name "claude-*" -exec basename {} \; 2>/dev/null || true))

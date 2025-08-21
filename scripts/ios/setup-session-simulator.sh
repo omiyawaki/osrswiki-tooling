@@ -152,8 +152,8 @@ echo "$SIMULATOR_NAME:$SIMULATOR_UDID" > .claude-session-simulator
 echo "$SIMULATOR_UDID" > .claude-simulator-udid
 echo "$SIMULATOR_NAME" > .claude-simulator-name
 
-# Get bundle identifier for the app
-BUNDLE_ID="com.omiyawaki.osrswiki"
+# Get bundle identifier for the app using the actual project configuration
+BUNDLE_ID=$(./scripts/ios/get-bundle-id.sh 2>/dev/null || echo "omiyawaki.osrswiki")
 echo "$BUNDLE_ID" > .claude-bundle-id
 
 # Create session environment file

@@ -59,18 +59,22 @@ fi
 # Change to iOS project directory
 cd platforms/ios
 
-# Clean any previous builds if they exist (optional, can be skipped for speed)
+# Create controlled build directory
+DERIVED_DATA_PATH="$(pwd)/build/DerivedData"
 echo "🧹 Cleaning previous build..."
-rm -rf build/ DerivedData/ || true
+rm -rf build/ || true
+mkdir -p build/
 
-# Build the iOS app for simulator
-echo "⚙️  Building iOS app..."
+# Build the iOS app for simulator with controlled build path
+echo "⚙️  Building iOS app to controlled location..."
+echo "📁 Build path: $DERIVED_DATA_PATH"
 xcodebuild \
     -project "osrswiki.xcodeproj" \
     -scheme "osrswiki" \
     -configuration Debug \
     -sdk iphonesimulator \
     -destination "platform=iOS Simulator,arch=arm64,id=$IOS_SIMULATOR_UDID" \
+    -derivedDataPath "$DERIVED_DATA_PATH" \
     build \
     -quiet
 
@@ -83,15 +87,15 @@ fi
 
 echo "✅ Build successful!"
 
-# Find the built app
-APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -name "osrswiki.app" -path "*/Debug-iphonesimulator/*" | head -1)
-if [[ -z "$APP_PATH" ]]; then
-    echo "❌ Could not find built app"
+# Use the exact app we just built (no search needed)
+APP_PATH="$DERIVED_DATA_PATH/Build/Products/Debug-iphonesimulator/osrswiki.app"
+if [[ ! -d "$APP_PATH" ]]; then
+    echo "❌ Could not find built app at expected location: $APP_PATH"
     echo "💡 Build may have failed. Check Xcode for errors."
     exit 1
 fi
 
-echo "📦 Found app at: $APP_PATH"
+echo "📦 Using app at: $APP_PATH"
 
 # Install the app on simulator
 echo "📲 Installing app on simulator..."

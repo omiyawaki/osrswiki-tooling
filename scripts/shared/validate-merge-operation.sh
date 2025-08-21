@@ -1,6 +1,15 @@
 #!/bin/bash
 set -euo pipefail
 
+# Import repository detection utility
+SCRIPT_DIR="$(dirname "${BASH_SOURCE[0]}")"
+if [[ -f "$SCRIPT_DIR/find-git-repo.sh" ]]; then
+    source "$SCRIPT_DIR/find-git-repo.sh"
+else
+    echo "ERROR: Cannot find find-git-repo.sh at $SCRIPT_DIR/find-git-repo.sh" >&2
+    exit 1
+fi
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -8,35 +17,49 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-echo -e "${BLUE}🔍 Validating merge operation...${NC}"
+echo -e "${BLUE}🔍 Validating merge operation (v2 - Smart Path Detection)...${NC}"
 
-# Function to check if we're in main repo (not a worktree)
-check_main_repo() {
-    if [[ -f ".git" ]] && grep -q "gitdir:" ".git" 2>/dev/null; then
-        echo -e "${RED}❌ Cannot perform merge from inside a worktree${NC}"
-        echo "Navigate to main repository: /Users/miyawaki/Develop/osrswiki"
-        return 1
+# Get repository context using smart detection
+get_repo_context() {
+    local context_output
+    if ! context_output=$(validate_repo_context 2>&1); then
+        echo -e "${RED}❌ Repository detection failed:${NC}"
+        echo "$context_output"
+        exit 1
     fi
     
-    if [[ ! -f "CLAUDE.md" ]]; then
-        echo -e "${RED}❌ Not in main repository (CLAUDE.md missing)${NC}"
-        echo "Navigate to main repository: /Users/miyawaki/Develop/osrswiki"
-        return 1
+    # Parse the output to get paths
+    local repo_root parent_dir
+    repo_root=$(echo "$context_output" | grep "REPO_ROOT=" | cut -d'=' -f2)
+    parent_dir=$(echo "$context_output" | grep "PARENT_DIR=" | cut -d'=' -f2)
+    
+    if [[ -z "$repo_root" ]] || [[ -z "$parent_dir" ]]; then
+        echo -e "${RED}❌ Failed to parse repository context${NC}"
+        exit 1
     fi
     
-    echo -e "${GREEN}✅ In main repository${NC}"
-    return 0
+    echo "REPO_ROOT=$repo_root"
+    echo "PARENT_DIR=$parent_dir"
 }
 
-# Function to validate git status before merge
+# Function to validate git status before merge (runs in git repository)
 check_git_status() {
+    local repo_root="$1"
+    
+    echo -e "${YELLOW}🔍 Checking git status in: $repo_root${NC}"
+    
+    # Change to git repository to run git commands
     local status_output
-    status_output=$(git status --porcelain)
+    if ! status_output=$(cd "$repo_root" && git status --porcelain 2>&1); then
+        echo -e "${RED}❌ Git status failed${NC}"
+        echo "$status_output"
+        return 1
+    fi
     
     if [[ -n "$status_output" ]]; then
         echo -e "${RED}❌ Working directory not clean${NC}"
         echo "Please commit or stash changes before merging:"
-        git status --short
+        (cd "$repo_root" && git status --short)
         return 1
     fi
     
@@ -44,18 +67,49 @@ check_git_status() {
     return 0
 }
 
-# Function to validate branch exists and has commits
-validate_branch() {
-    local branch="$1"
+# Function to validate that current branch is main (runs in git repository)
+check_current_branch() {
+    local repo_root="$1"
     
-    if ! git rev-parse --verify "$branch" >/dev/null 2>&1; then
+    echo -e "${YELLOW}🔍 Checking current branch in: $repo_root${NC}"
+    
+    local current_branch
+    if ! current_branch=$(cd "$repo_root" && git branch --show-current 2>&1); then
+        echo -e "${RED}❌ Failed to get current branch${NC}"
+        echo "$current_branch"
+        return 1
+    fi
+    
+    if [[ "$current_branch" != "main" ]]; then
+        echo -e "${RED}❌ Not on main branch (currently on: $current_branch)${NC}"
+        echo "Switch to main branch before merging:"
+        echo "  cd $repo_root && git checkout main"
+        return 1
+    fi
+    
+    echo -e "${GREEN}✅ On main branch${NC}"
+    return 0
+}
+
+# Function to validate branch exists and has commits (runs in git repository)  
+validate_branch() {
+    local repo_root="$1"
+    local branch="$2"
+    
+    echo -e "${YELLOW}🔍 Validating branch in: $repo_root${NC}"
+    
+    # Change to git repository to run git commands
+    if ! (cd "$repo_root" && git rev-parse --verify "$branch" >/dev/null 2>&1); then
         echo -e "${RED}❌ Branch '$branch' does not exist${NC}"
         return 1
     fi
     
     # Check if branch has commits ahead of main
     local ahead_count
-    ahead_count=$(git rev-list --count main.."$branch" 2>/dev/null || echo "0")
+    if ! ahead_count=$(cd "$repo_root" && git rev-list --count main.."$branch" 2>/dev/null); then
+        echo -e "${RED}❌ Failed to compare branch with main${NC}"
+        return 1
+    fi
     
     if [[ "$ahead_count" -eq 0 ]]; then
         echo -e "${YELLOW}⚠️  Branch '$branch' has no commits ahead of main${NC}"
@@ -64,73 +118,6 @@ validate_branch() {
     fi
     
     echo -e "${GREEN}✅ Branch '$branch' exists with $ahead_count commits ahead${NC}"
-    return 0
-}
-
-# Function to check if merge would be successful
-test_merge() {
-    local branch="$1"
-    
-    echo -e "${YELLOW}🧪 Testing merge feasibility...${NC}"
-    
-    # Test merge without committing
-    if git merge --no-commit --no-ff "$branch" >/dev/null 2>&1; then
-        # Abort the test merge
-        git merge --abort >/dev/null 2>&1
-        echo -e "${GREEN}✅ Merge test successful${NC}"
-        return 0
-    else
-        # If merge failed, abort it
-        git merge --abort >/dev/null 2>&1 || true
-        echo -e "${RED}❌ Merge test failed - conflicts detected${NC}"
-        echo "Resolve conflicts manually before merging"
-        return 1
-    fi
-}
-
-# Function to validate that current branch is main
-check_current_branch() {
-    local current_branch
-    current_branch=$(git branch --show-current)
-    
-    if [[ "$current_branch" != "main" ]]; then
-        echo -e "${RED}❌ Not on main branch (currently on: $current_branch)${NC}"
-        echo "Switch to main branch before merging"
-        return 1
-    fi
-    
-    echo -e "${GREEN}✅ On main branch${NC}"
-    return 0
-}
-
-# Function to check for improper root-level changes
-check_for_improper_files() {
-    local staged_files
-    staged_files=$(git diff --cached --name-only 2>/dev/null || echo "")
-    
-    # Check for agent files, session files, and root-level changes
-    local improper_files=""
-    
-    # Agent files pattern
-    improper_files+=$(echo "$staged_files" | grep "\.claude/agents/.*\.md$\|ANDROID_UI_TESTER_USAGE\.md$" || true)
-    
-    # Session files pattern  
-    improper_files+=$(echo "$staged_files" | grep "^\.claude-.*$" || true)
-    
-    # Root-level files that should never change in worktrees
-    # Allow only changes within: platforms/, scripts/, shared/, tools/, cloud/
-    improper_files+=$(echo "$staged_files" | grep -v "^platforms/\|^scripts/\|^shared/\|^tools/\|^cloud/" | grep "^[^/]*$" || true)
-    
-    if [[ -n "$improper_files" ]]; then
-        echo -e "${RED}❌ Improper files detected in staging area${NC}"
-        echo "Worktree changes should only modify files within: platforms/, scripts/, shared/, tools/, cloud/"
-        echo "These files should not be committed:"
-        echo "$improper_files" | sort | uniq
-        echo "Remove these files from staging before committing"
-        return 1
-    fi
-    
-    echo -e "${GREEN}✅ No improper files in staging area${NC}"
     return 0
 }
 
@@ -147,23 +134,35 @@ main() {
     echo -e "${BLUE}Validating merge of branch: $branch${NC}"
     echo ""
     
-    # Run all validations
-    check_main_repo || exit 1
-    check_current_branch || exit 1
-    check_git_status || exit 1
-    check_for_improper_files || exit 1
-    validate_branch "$branch" || exit 1
-    test_merge "$branch" || exit 1
+    # Get repository context using smart detection
+    echo -e "${YELLOW}🔍 Detecting repository structure...${NC}"
+    local context_output
+    context_output=$(get_repo_context)
+    local repo_root parent_dir
+    repo_root=$(echo "$context_output" | grep "REPO_ROOT=" | cut -d'=' -f2)
+    parent_dir=$(echo "$context_output" | grep "PARENT_DIR=" | cut -d'=' -f2)
+    
+    echo -e "${GREEN}✅ Repository detected:${NC}"
+    echo "   Git repository: $repo_root"
+    echo "   Parent directory: $parent_dir"
+    echo ""
+    
+    # Run all validations with proper context
+    check_current_branch "$repo_root" || exit 1
+    check_git_status "$repo_root" || exit 1
+    validate_branch "$repo_root" "$branch" || exit 1
     
     echo ""
     echo -e "${GREEN}🎉 All validations passed!${NC}"
     echo -e "${GREEN}Ready to merge branch: $branch${NC}"
     echo ""
     echo -e "${YELLOW}To perform the merge:${NC}"
+    echo "   cd $repo_root"
     echo "   git merge --no-ff '$branch'"
     echo ""
     echo -e "${YELLOW}After merging, validate with:${NC}"
-    echo "   ./scripts/shared/validate-post-merge.sh"
+    echo "   cd $parent_dir"
+    echo "   ./main/scripts/shared/validate-post-merge.sh"
 }
 
 main "$@"

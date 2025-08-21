@@ -61,7 +61,7 @@ done
 echo ""
 
 # Find active worktree sessions
-SESSIONS_DIR="$HOME/Develop/osrswiki-sessions"
+SESSIONS_DIR="$HOME/Develop/osrswiki/sessions"
 ACTIVE_SESSIONS=()
 if [[ -d "$SESSIONS_DIR" ]]; then
     ACTIVE_SESSIONS=($(find "$SESSIONS_DIR" -maxdepth 1 -type d -name "claude-*" -exec basename {} \; 2>/dev/null || true))

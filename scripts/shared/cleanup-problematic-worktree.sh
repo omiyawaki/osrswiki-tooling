@@ -44,7 +44,15 @@ echo -e "${GREEN}✅ Removed scripts-shared symlink${NC}"
 echo -e "${YELLOW}📁 Copying missing essential files...${NC}"
 
 # Copy Android local.properties if it exists
-MAIN_REPO_PATH="/Users/miyawaki/Develop/osrswiki"
+# Use smart repository detection
+SCRIPT_DIR="$(dirname "${BASH_SOURCE[0]}")"
+if [[ -f "$SCRIPT_DIR/find-git-repo.sh" ]]; then
+    source "$SCRIPT_DIR/find-git-repo.sh"
+    MAIN_REPO_PATH=$(find_osrswiki_parent 2>/dev/null || echo "/Users/miyawaki/Develop/osrswiki")
+else
+    # Fallback to hardcoded path if detection utility not available
+    MAIN_REPO_PATH="/Users/miyawaki/Develop/osrswiki"
+fi
 if [[ -f "$MAIN_REPO_PATH/platforms/android/local.properties" ]]; then
     cp "$MAIN_REPO_PATH/platforms/android/local.properties" platforms/android/
     echo -e "${GREEN}✅ Copied platforms/android/local.properties${NC}"

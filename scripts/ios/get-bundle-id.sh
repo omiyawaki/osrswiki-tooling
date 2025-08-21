@@ -58,11 +58,11 @@ fi
 
 # Method 4: Fall back to hardcoded value from our project setup
 if [[ -z "$BUNDLE_ID" ]] || [[ "$BUNDLE_ID" == "\$(PRODUCT_BUNDLE_IDENTIFIER)" ]]; then
-    BUNDLE_ID="com.omiyawaki.osrswiki"
+    BUNDLE_ID="omiyawaki.osrswiki"
 fi
 
 # Clean up the bundle ID (remove quotes and variables)
-BUNDLE_ID=$(echo "$BUNDLE_ID" | sed 's/"//g' | sed 's/\$(.*)/com.omiyawaki.osrswiki/')
+BUNDLE_ID=$(echo "$BUNDLE_ID" | sed 's/"//g' | sed 's/\$(.*)/omiyawaki.osrswiki/')
 
 if [[ -z "$BUNDLE_ID" ]]; then
     echo "❌ Could not determine bundle identifier" >&2

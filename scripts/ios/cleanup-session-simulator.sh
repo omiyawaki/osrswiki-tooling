@@ -2,9 +2,13 @@
 set -euo pipefail
 
 # iOS Simulator session cleanup - equivalent to Android cleanup-session-device.sh
-# Cleans up the iOS Simulator and session files created during development
+# Safely cleans up ONLY the simulator created by the current session
+# CRITICAL: Only deletes simulators with session naming pattern for safety
 
 echo "🧹 Cleaning up iOS Simulator session..."
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SESSION_DIR="${SESSION_DIR:-$(pwd)}"
 
 # Load session environment if available
 if [[ -f .claude-env ]]; then
@@ -32,7 +36,8 @@ else
         echo "   • UDID: $IOS_SIMULATOR_UDID"
     else
         echo "❌ No session or parameters provided"
-        exit 1
+        echo "✅ This is normal if no iOS simulator was created for this session"
+        exit 0
     fi
 fi
 
@@ -42,24 +47,46 @@ if [[ "$(uname)" != "Darwin" ]]; then
     exit 1
 fi
 
-# Check if simulator exists
-if ! xcrun simctl list devices | grep -q "$IOS_SIMULATOR_UDID"; then
-    echo "⚠️  Simulator $SIMULATOR_NAME ($IOS_SIMULATOR_UDID) not found"
-    echo "💡 It may have already been deleted"
+# Skip cleanup if no simulator was set
+if [[ -z "${IOS_SIMULATOR_UDID:-}" ]]; then
+    echo "✅ No session simulator found (IOS_SIMULATOR_UDID not set)"
+    echo "   This is normal if no iOS simulator was created for this session"
+    echo "   Proceeding with session file cleanup only..."
 else
-    # Shutdown simulator if running
-    echo "🛑 Shutting down simulator..."
-    xcrun simctl shutdown "$IOS_SIMULATOR_UDID" 2>/dev/null || true
-    
-    # Delete simulator
-    echo "🗑️  Deleting simulator: $SIMULATOR_NAME"
-    xcrun simctl delete "$IOS_SIMULATOR_UDID"
-    
-    if [[ $? -eq 0 ]]; then
-        echo "✅ Simulator deleted successfully"
+    # Verify the simulator exists and get its info
+    SIMULATOR_INFO=$(xcrun simctl list devices | grep "$IOS_SIMULATOR_UDID" || true)
+    if [[ -z "$SIMULATOR_INFO" ]]; then
+        echo "✅ Simulator already cleaned up (not found in device list)"
+        echo "   UDID: $IOS_SIMULATOR_UDID"
     else
-        echo "❌ Failed to delete simulator"
-        echo "💡 Try manually: xcrun simctl delete $IOS_SIMULATOR_UDID"
+        echo "📱 Found simulator: $SIMULATOR_INFO"
+        
+        # CRITICAL SAFETY CHECK: Only delete simulators with session naming pattern
+        ACTUAL_SIMULATOR_NAME=$(echo "$SIMULATOR_INFO" | sed -n 's/.*\(osrswiki-claude-[0-9]\{8\}-[0-9]\{6\}-.*\).*/\1/p')
+        if [[ -z "$ACTUAL_SIMULATOR_NAME" ]]; then
+            echo "🚨 SAFETY VIOLATION: Simulator does not match session naming pattern"
+            echo "   Expected pattern: osrswiki-claude-YYYYMMDD-HHMMSS-*"
+            echo "   Found: $SIMULATOR_INFO"
+            echo "   Refusing to delete - this may be a system or shared simulator"
+            echo "⚠️  Manual cleanup required if this simulator was actually created by this session"
+        else
+            echo "✅ Safety check passed - simulator matches session pattern: $ACTUAL_SIMULATOR_NAME"
+            
+            # Shutdown simulator if running
+            echo "🛑 Shutting down simulator..."
+            xcrun simctl shutdown "$IOS_SIMULATOR_UDID" 2>/dev/null || true
+            
+            # Delete the session-specific simulator
+            echo "🗑️  Deleting session simulator: $ACTUAL_SIMULATOR_NAME"
+            if xcrun simctl delete "$IOS_SIMULATOR_UDID"; then
+                echo "✅ Session simulator deleted successfully"
+                echo "   UDID: $IOS_SIMULATOR_UDID"
+                echo "   Name: $ACTUAL_SIMULATOR_NAME"
+            else
+                echo "❌ Failed to delete simulator"
+                echo "💡 Try manually: xcrun simctl delete $IOS_SIMULATOR_UDID"
+            fi
+        fi
     fi
 fi
 

@@ -24,7 +24,8 @@ elif [[ -f "../../../CLAUDE.md" && -d "../../../main/.git" ]]; then
     PROJECT_ROOT="$(cd ../../.. && pwd)"
 else
     echo -e "${RED}❌ Must run from project root directory (where CLAUDE.md is located)${NC}"
-    echo "Run this script from /Users/miyawaki/Develop/osrswiki"
+    echo "Run this script from the directory containing main/ and sessions/ subdirectories"
+    echo "Expected structure: <parent>/main/.git and <parent>/sessions/"
     exit 1
 fi
 
@@ -147,5 +148,5 @@ echo "   # ... develop ..."
 echo "   ./scripts/shared/end-session.sh               # Clean up session"
 echo ""
 echo -e "${BLUE}💡 To remove session from main repo:${NC}"
-echo "   cd /Users/miyawaki/Develop/osrswiki"
+echo "   cd $PROJECT_ROOT"
 echo "   git worktree remove $WORKTREE_DIR"
