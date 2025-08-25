@@ -76,17 +76,19 @@ generate_coverage_report() {
     
     cd "$ANDROID_ROOT"
     
-    # Run tests and generate coverage
-    if ! ./gradlew testDebugUnitTest koverXmlReport koverHtmlReport --quiet; then
-        log_warning "Some tests failed, but continuing with coverage analysis"
+    # Run tests (Kover tasks not available in current configuration)
+    if ! ./gradlew testDebugUnitTest --quiet; then
+        log_warning "Some tests failed, but continuing with analysis"
     fi
     
+    # Note: Kover coverage is not configured - using basic test results
     local coverage_xml="$ANDROID_ROOT/app/build/reports/kover/report.xml"
     local coverage_html="$ANDROID_ROOT/app/build/reports/kover/html/index.html"
     
     if [[ ! -f "$coverage_xml" ]]; then
-        log_error "Coverage report not found. Make sure Kover is configured correctly."
-        exit 1
+        log_warning "Kover coverage not configured. Add kover plugin to build.gradle.kts for coverage analysis."
+        log_info "Analyzing test results without coverage data..."
+        return 0
     fi
     
     log_success "Coverage reports generated:"
@@ -461,7 +463,7 @@ show_recommendations() {
         echo "🎯 Focus on reaching $MINIMUM_COVERAGE% minimum coverage:"
         echo "   1. Start with HIGH priority classes"
         echo "   2. Use: /scaffold [ClassName] to generate tests"
-        echo "   3. Run: ./gradlew testDebugUnitTest koverVerify"
+        echo "   3. Run: ./gradlew testDebugUnitTest"
     elif [[ $overall_coverage -lt $TARGET_COVERAGE ]]; then
         echo "🎯 Improve coverage toward $TARGET_COVERAGE% target:"
         echo "   1. Add tests for MEDIUM priority classes"

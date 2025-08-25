@@ -26,7 +26,7 @@ echo "=================================================="
 # Step 1: Build app (only if needed)
 echo "📦 Building app..."
 cd "$PROJECT_ROOT/platforms/ios"
-xcodebuild -project OSRSWiki.xcodeproj -scheme osrswiki -configuration Debug -sdk iphonesimulator build -quiet
+xcodebuild -project osrswiki.xcodeproj -scheme osrswiki -configuration Debug -sdk iphonesimulator build -quiet
 
 # Step 2: Install app
 echo "📱 Installing app..."

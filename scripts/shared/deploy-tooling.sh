@@ -193,8 +193,26 @@ git add -A
 if ! git diff --cached --quiet; then
     # Generate intelligent commit message based on actual changes
     print_info "🧠 Generating intelligent commit message..."
-    DEPLOY_COMMIT_MSG=$(source "$MONOREPO_ROOT/scripts/shared/generate-smart-commit-message.sh" && \
-                        generate_deployment_commit_message "tooling" "$GIT_ROOT" "$DEPLOY_TOOLING")
+    # Use find-git-repo.sh to locate the script correctly
+    if source "$MONOREPO_ROOT/main/scripts/shared/find-git-repo.sh"; then
+        REPO_ROOT=$(find_git_repo)
+        if [[ -f "$REPO_ROOT/scripts/shared/generate-smart-commit-message.sh" ]]; then
+            DEPLOY_COMMIT_MSG=$(source "$REPO_ROOT/scripts/shared/generate-smart-commit-message.sh" && \
+                               generate_deployment_commit_message "tooling" "$GIT_ROOT" "$DEPLOY_TOOLING")
+        else
+            print_info "⚠️  Smart commit message script not found, using fallback"
+            DEPLOY_COMMIT_MSG="Merge deployment: tooling updates from monorepo
+- Deploy scripts and shared components
+- Build tools and configurations  
+- Deployment infrastructure improvements"
+        fi
+    else
+        print_info "⚠️  Repository detection failed, using fallback commit message"
+        DEPLOY_COMMIT_MSG="Merge deployment: tooling updates from monorepo
+- Deploy scripts and shared components
+- Build tools and configurations
+- Deployment infrastructure improvements"
+    fi
 
     git commit -m "$DEPLOY_COMMIT_MSG"
     print_success "Deployment commit created"

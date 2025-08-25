@@ -118,11 +118,24 @@ case "$PLATFORM" in
         fi
         
         # Check for iOS project files
-        if [[ ! -f "platforms/ios/OSRS Wiki.xcodeproj/project.pbxproj" ]]; then
+        if [[ ! -f "platforms/ios/osrswiki.xcodeproj/project.pbxproj" ]]; then
             validation_warning "iOS Xcode project may not be properly configured"
         else
             validation_success "iOS Xcode project found"
         fi
+        
+        # iOS build validation (quality gate)
+        echo -e "${BLUE}ℹ️  Validating iOS build capability...${NC}"
+        cd platforms/ios
+        if xcodebuild -project osrswiki.xcodeproj -scheme osrswiki -sdk iphonesimulator -quiet build >/dev/null 2>&1; then
+            validation_success "iOS project builds successfully for simulator"
+            echo "  💡 Non-hanging build validation approach used"
+        else
+            validation_warning "iOS project build failed - check for compilation errors"
+            echo "  🔧 Fix compilation errors before deployment"
+            echo "  💡 For enhanced testing: ./scripts/ios/test-non-hanging.sh"
+        fi
+        cd "$GIT_ROOT"
         ;;
         
     "tooling")

@@ -34,8 +34,9 @@ show_usage() {
     echo "This script performs:"
     echo "  1. Pre-merge validation"
     echo "  2. Merge operation (fast-forward or merge commit)"
-    echo "  3. Branch deletion (the missing piece!)"
-    echo "  4. Post-merge verification"
+    echo "  3. Worktree session cleanup (required for branch deletion)"
+    echo "  4. Branch deletion"
+    echo "  5. Post-merge verification"
 }
 
 # Function to detect merge strategy
@@ -135,6 +136,42 @@ perform_merge() {
     
     echo -e "${RED}❌ Unknown merge strategy: $strategy${NC}"
     return 1
+}
+
+# Function to cleanup worktree session
+cleanup_worktree_session() {
+    local parent_dir="$1"
+    local feature_branch="$2"
+    
+    echo -e "${YELLOW}🌿 Cleaning up associated worktree session...${NC}"
+    
+    # Extract session name from branch name (claude/YYYYMMDD-HHMMSS-topic -> claude-YYYYMMDD-HHMMSS-topic)
+    local session_name
+    session_name=$(echo "$feature_branch" | sed 's|^claude/|claude-|')
+    
+    local session_path="$parent_dir/sessions/$session_name"
+    
+    # Check if session directory exists
+    if [[ ! -d "$session_path" ]]; then
+        echo -e "${YELLOW}⚠️  No worktree session found at: $session_path${NC}"
+        return 0
+    fi
+    
+    cd "$parent_dir"
+    
+    # Remove the worktree (this will free up the branch)
+    if git worktree remove "$session_path" --force 2>/dev/null; then
+        echo -e "${GREEN}✅ Worktree session cleaned up successfully${NC}"
+        return 0
+    else
+        echo -e "${YELLOW}⚠️  Worktree cleanup had issues, but continuing...${NC}"
+        # Try to remove directory manually if worktree command failed
+        if [[ -d "$session_path" ]]; then
+            rm -rf "$session_path" 2>/dev/null || true
+            echo -e "${YELLOW}   • Session directory removed manually${NC}"
+        fi
+        return 0
+    fi
 }
 
 # Function to delete the feature branch
@@ -290,8 +327,13 @@ main() {
     fi
     echo ""
     
-    # Step 6: Delete feature branch (THE MISSING PIECE!)
-    echo -e "${BLUE}📋 Step 6: Feature branch cleanup${NC}"
+    # Step 6: Worktree session cleanup (REQUIRED before branch deletion!)
+    echo -e "${BLUE}📋 Step 6: Worktree session cleanup${NC}"
+    cleanup_worktree_session "$parent_dir" "$feature_branch"
+    echo ""
+    
+    # Step 7: Delete feature branch (now possible since worktree is gone!)
+    echo -e "${BLUE}📋 Step 7: Feature branch cleanup${NC}"
     if ! delete_feature_branch "$repo_root" "$feature_branch"; then
         echo -e "${YELLOW}⚠️  Branch deletion failed, but merge was successful${NC}"
         echo "You may need to delete the branch manually:"
@@ -299,8 +341,8 @@ main() {
         echo ""
     fi
     
-    # Step 7: Final verification
-    echo -e "${BLUE}📋 Step 7: Final verification${NC}"
+    # Step 8: Final verification
+    echo -e "${BLUE}📋 Step 8: Final verification${NC}"
     if ! verify_merge "$repo_root"; then
         echo -e "${RED}❌ Final verification failed${NC}"
         exit 1
@@ -312,12 +354,13 @@ main() {
     echo ""
     echo -e "${BLUE}📋 Summary:${NC}"
     echo -e "${GREEN}   ✅ Feature branch merged to main${NC}"
+    echo -e "${GREEN}   ✅ Worktree session cleaned up${NC}"
     echo -e "${GREEN}   ✅ Feature branch deleted${NC}"
     echo -e "${GREEN}   ✅ All validations passed${NC}"
     echo ""
     echo -e "${YELLOW}💡 Next steps:${NC}"
-    echo "   • Run session cleanup: ./scripts/shared/end-session.sh"
     echo "   • Deploy when ready: /deploy command"
+    echo "   • Start new session: /start command"
     echo ""
     echo -e "${BLUE}Repository ready for next development session!${NC}"
 }

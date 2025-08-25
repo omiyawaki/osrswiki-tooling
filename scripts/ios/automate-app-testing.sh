@@ -53,7 +53,7 @@ build_app() {
     log "Building iOS app..."
     cd "$PROJECT_ROOT/platforms/ios"
     
-    xcodebuild -project OSRSWiki.xcodeproj \
+    xcodebuild -project osrswiki.xcodeproj \
                -scheme osrswiki \
                -configuration Debug \
                -sdk iphonesimulator \
@@ -110,12 +110,12 @@ run_ui_tests() {
     log "Running comprehensive UI navigation tests..."
     cd "$PROJECT_ROOT/platforms/ios"
     
-    # Run our navigation automation tests
+    # Run UI automation tests with XCTest framework
     xcodebuild test \
-        -project OSRSWiki.xcodeproj \
+        -project osrswiki.xcodeproj \
         -scheme osrswiki \
         -destination "platform=iOS Simulator,id=$SIMULATOR_UDID" \
-        -only-testing:osrswikiUITests/NavigationAutomationTests/testNavigateAllTabsWithScreenshots \
+        -testPlan osrswikiUITests \
         -quiet
     
     success "UI navigation tests completed"
@@ -123,25 +123,166 @@ run_ui_tests() {
 
 # Quick map verification (most common agent need)
 quick_map_test() {
-    log "Running quick map verification..."
+    log "Running quick map verification with XCTest..."
     
-    launch_to_tab "map"
-    take_screenshot "quick_map_verification" "Map tab with repositioned UI elements"
+    cd "$PROJECT_ROOT/platforms/ios"
+    
+    # Run specific map-related UI tests
+    xcodebuild test \
+        -project osrswiki.xcodeproj \
+        -scheme osrswiki \
+        -destination "platform=iOS Simulator,id=$SIMULATOR_UDID" \
+        -only-testing:osrswikiUITests/MapLibreEmbedVerificationTest \
+        -quiet
     
     success "Quick map test completed"
 }
 
 # Comprehensive testing of all tabs
 full_app_test() {
-    log "Running comprehensive app testing..."
+    log "Running comprehensive app testing with XCTest..."
     
-    # Test each tab with launch arguments
-    for tab in "news" "map" "search" "saved" "more"; do
-        launch_to_tab "$tab"
-        take_screenshot "comprehensive_${tab}_tab" "Full test of $tab tab"
-    done
+    cd "$PROJECT_ROOT/platforms/ios"
+    
+    # Run comprehensive UI test suite
+    xcodebuild test \
+        -project osrswiki.xcodeproj \
+        -scheme osrswiki \
+        -destination "platform=iOS Simulator,id=$SIMULATOR_UDID" \
+        -only-testing:osrswikiUITests \
+        -quiet
     
     success "Comprehensive app testing completed"
+}
+
+# Run unit tests only
+run_unit_tests() {
+    log "Running unit tests with XCTest..."
+    
+    cd "$PROJECT_ROOT/platforms/ios"
+    
+    # Run unit tests (non-UI tests)
+    xcodebuild test \
+        -project osrswiki.xcodeproj \
+        -scheme osrswiki \
+        -destination "platform=iOS Simulator,id=$SIMULATOR_UDID" \
+        -only-testing:osrswikiTests \
+        -quiet
+    
+    success "Unit tests completed"
+}
+
+# Create new XCTest file with proper template
+write_test_file() {
+    local test_type="$1"
+    local test_name="$2"
+    
+    if [[ -z "$test_type" || -z "$test_name" ]]; then
+        error "Test type and name required. Usage: write-test [ui|unit] TestName"
+    fi
+    
+    log "Creating new $test_type test: $test_name"
+    
+    case "$test_type" in
+        "ui")
+            local test_dir="$PROJECT_ROOT/platforms/ios/osrswikiUITests"
+            local test_file="$test_dir/${test_name}Test.swift"
+            
+            cat > "$test_file" << 'EOF'
+import XCTest
+
+class TESTNAME_Test: XCTestCase {
+    var app: XCUIApplication!
+    
+    override func setUpWithError() throws {
+        continueAfterFailure = false
+        app = XCUIApplication()
+        app.launch()
+    }
+    
+    override func tearDownWithError() throws {
+        app = nil
+    }
+    
+    func testTESTNAME_Functionality() {
+        // TODO: Implement your UI test here
+        // Example:
+        // let button = app.buttons["YourButton"]
+        // XCTAssertTrue(button.exists, "Button should exist")
+        // button.tap()
+        // 
+        // let result = app.staticTexts["ExpectedResult"]
+        // XCTAssertTrue(result.exists, "Expected result should appear")
+    }
+    
+    func testTESTNAME_EdgeCase() {
+        // TODO: Test edge cases and error conditions
+        // Add more test methods as needed
+    }
+}
+EOF
+            # Replace TESTNAME placeholder
+            sed -i '' "s/TESTNAME/$test_name/g" "$test_file"
+            success "UI test created: $test_file"
+            ;;
+            
+        "unit")
+            local test_dir="$PROJECT_ROOT/platforms/ios/osrswikiTests"
+            local test_file="$test_dir/${test_name}Tests.swift"
+            
+            cat > "$test_file" << 'EOF'
+import XCTest
+@testable import osrswiki
+
+class TESTNAME_Tests: XCTestCase {
+    
+    override func setUpWithError() throws {
+        // Setup code before each test method
+    }
+    
+    override func tearDownWithError() throws {
+        // Cleanup code after each test method
+    }
+    
+    func testTESTNAME_BasicFunctionality() {
+        // TODO: Implement your unit test here
+        // Example:
+        // let result = YourClass.yourMethod()
+        // XCTAssertEqual(result, expectedValue, "Method should return expected value")
+    }
+    
+    func testTESTNAME_EdgeCases() {
+        // TODO: Test edge cases and error conditions
+        // Example:
+        // XCTAssertThrowsError(try YourClass.methodThatShouldThrow()) {
+        //     error in
+        //     XCTAssertEqual(error as? YourErrorType, .expectedError)
+        // }
+    }
+    
+    func testTESTNAME_Performance() {
+        // TODO: Add performance tests if needed
+        // self.measure {
+        //     // Code to measure performance
+        // }
+    }
+}
+EOF
+            # Replace TESTNAME placeholder
+            sed -i '' "s/TESTNAME/$test_name/g" "$test_file"
+            success "Unit test created: $test_file"
+            ;;
+            
+        *)
+            error "Invalid test type. Use 'ui' or 'unit'"
+            ;;
+    esac
+    
+    echo ""
+    echo "📝 Next steps:"
+    echo "1. Edit the test file to implement your specific test logic"
+    echo "2. Build the app: $0 build"
+    echo "3. Run tests: $0 ${test_type}-tests"
 }
 
 # Clean up screenshots older than specified hours
@@ -157,42 +298,62 @@ cleanup_screenshots() {
 # Show usage information
 show_usage() {
     cat << EOF
-🤖 iOS App Testing Automation
+🤖 iOS App Testing Automation - XCTest Based
 
 USAGE:
     $0 [COMMAND] [OPTIONS]
 
 COMMANDS:
+    write-test [TYPE] [NAME] Create new XCTest file (REQUIRED before testing)
     build           Build the iOS app
-    quick-map       Quick map tab verification (most common)
-    full-test       Test all tabs comprehensively  
+    quick-map       Quick map tab verification using XCTest (most common)
+    full-test       Test all tabs comprehensively using XCTest  
     ui-tests        Run XCTest UI automation tests
+    unit-tests      Run XCTest unit tests
     launch [TAB]    Launch directly to specific tab
-    screenshot [NAME] Take a single screenshot
+    screenshot [NAME] Take a single screenshot (for debugging only)
     cleanup [HOURS] Clean old screenshots (default: 24h)
     help            Show this help
 
 TAB OPTIONS (for launch command):
     news, map, search, saved, more
 
-EXAMPLES:
-    $0 quick-map                    # Quick map verification
-    $0 launch map                   # Launch directly to map tab
-    $0 full-test                    # Test all tabs
-    $0 screenshot "my-test"         # Take screenshot
-    $0 cleanup 8                    # Clean screenshots older than 8h
+TEST TYPES (for write-test command):
+    ui          Create UI test (for user interactions)
+    unit        Create unit test (for logic/functions)
 
-AGENT WORKFLOW:
+EXAMPLES:
+    $0 write-test ui MyFeature      # Create UI test FIRST (REQUIRED)
+    $0 write-test unit MyLogic      # Create unit test FIRST (REQUIRED)
+    $0 quick-map                    # Quick map verification with XCTest
+    $0 full-test                    # Comprehensive XCTest suite
+    $0 ui-tests                     # UI automation tests
+    $0 unit-tests                   # Unit tests only
+    $0 launch map                   # Launch to specific tab for debugging
+
+RECOMMENDED AGENT WORKFLOW:
     1. source .claude-env           # Load session environment
-    2. $0 build                     # Build app (if needed)
-    3. $0 quick-map                 # Verify map changes
-    4. $0 screenshot "description"  # Document findings
+    2. $0 write-test ui MyFeature   # FIRST: Write tests for your changes
+    3. $0 build                     # Build app
+    4. $0 quick-map                 # Verify changes with automated tests
+    5. $0 full-test                 # Run comprehensive test suite
+    
+TESTING APPROACH:
+    ⚠️  CRITICAL: ALWAYS write tests BEFORE running XCTest commands
+    • Primary: Use XCTest for automated verification (after writing tests)
+    • Secondary: Screenshots only for debugging issues
+    • Manual: Launch specific tabs for detailed inspection
+    
+⚠️  WARNING: XCTest commands will fail if no tests exist for your feature!
 EOF
 }
 
 # Main execution
 main() {
     case "${1:-help}" in
+        "write-test")
+            write_test_file "$2" "$3"
+            ;;
         "build")
             check_environment
             build_app
@@ -214,6 +375,11 @@ main() {
             build_app
             install_and_launch
             run_ui_tests
+            ;;
+        "unit-tests")
+            check_environment
+            build_app
+            run_unit_tests
             ;;
         "launch")
             check_environment

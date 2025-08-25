@@ -8,26 +8,26 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Must be run from project root directory (where CLAUDE.md is located)
-# Check running location and set paths accordingly
-if [[ -f "CLAUDE.md" && -d "main/.git" ]]; then
-    # Running from project root 
-    GIT_ROOT="$(cd main && pwd)"
-    PROJECT_ROOT="$(pwd)"
-elif [[ -d ".git" && -f "../CLAUDE.md" ]]; then
-    # Running from git repo root (main/)
-    GIT_ROOT="$(pwd)"
-    PROJECT_ROOT="$(cd .. && pwd)"
-elif [[ -f "../../../CLAUDE.md" && -d "../../../main/.git" ]]; then
-    # Running from main/scripts/shared
-    GIT_ROOT="$(cd ../../.. && cd main && pwd)"
-    PROJECT_ROOT="$(cd ../../.. && pwd)"
-else
-    echo -e "${RED}❌ Must run from project root directory (where CLAUDE.md is located)${NC}"
-    echo "Run this script from the directory containing main/ and sessions/ subdirectories"
-    echo "Expected structure: <parent>/main/.git and <parent>/sessions/"
+# Use find-git-repo.sh for robust repository discovery
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/find-git-repo.sh"
+
+# Discover repository locations
+if ! REPO_CONTEXT=$(validate_repo_context); then
+    echo -e "${RED}❌ Repository discovery failed${NC}"
+    echo "$REPO_CONTEXT"
+    echo "Run this script from within the osrswiki project structure"
     exit 1
 fi
+
+# Parse repository context
+eval "$REPO_CONTEXT"
+GIT_ROOT="$REPO_ROOT"
+PROJECT_ROOT="$PARENT_DIR"
+
+echo -e "${GREEN}✅ Repository discovered:${NC}"
+echo "   Git root: $GIT_ROOT"
+echo "   Project root: $PROJECT_ROOT"
 
 # Safety check: ensure we're not inside a worktree
 if [[ -f ".git" ]] && grep -q "gitdir:" ".git" 2>/dev/null; then
@@ -138,10 +138,12 @@ echo "   ./scripts/android/quick-test.sh               # Build and deploy Androi
 echo "   ./scripts/android/take-screenshot.sh          # Take Android screenshot"
 echo ""
 echo -e "${YELLOW}   # iOS Development (macOS only):${NC}"
+echo "   📖 REQUIRED: Read ./scripts/ios/XCTest-GUIDE.md first!"
 echo "   ./scripts/ios/setup-session-simulator.sh      # Start iOS Simulator"
 echo "   source .claude-env                             # Load iOS environment variables"
 echo "   ./scripts/ios/quick-test.sh                   # Build and deploy iOS app"
-echo "   ./scripts/ios/take-screenshot.sh              # Take iOS screenshot"
+echo "   ./scripts/ios/automate-app-testing.sh write-test ui MyFeature # WRITE tests first"
+echo "   ./scripts/ios/automate-app-testing.sh quick-map # Test with XCTest framework"
 echo "   ./scripts/ios/get-bundle-id.sh                # Get iOS bundle identifier"
 echo ""
 echo "   # ... develop ..."

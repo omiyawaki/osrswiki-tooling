@@ -120,6 +120,6 @@ main() {
 }
 
 # Only run main if script is executed directly
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+if [[ -n "${BASH_SOURCE:-}" && "${BASH_SOURCE[0]}" == "${0}" ]]; then
     main "$@"
 fi

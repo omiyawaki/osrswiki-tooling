@@ -495,7 +495,7 @@ main() {
     echo "1. Review the generated test: $test_file"
     echo "2. Fill in TODO comments with actual test logic"
     echo "3. Run tests: cd platforms/android && ./gradlew testDebugUnitTest"
-    echo "4. Check coverage: ./gradlew koverXmlReport"
+    echo "4. Verify tests pass: ./gradlew testDebugUnitTest"
 }
 
 # Run main function
